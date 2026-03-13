@@ -1,57 +1,37 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Calendar, ArrowRight, Sparkles, X, Loader2 } from 'lucide-react';
 import useEmblaCarousel from 'embla-carousel-react';
 import Autoplay from 'embla-carousel-autoplay';
 import { GoogleGenAI } from "@google/genai";
+import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { db } from '../lib/firebase';
+import { seedDatabase } from '../lib/seedData';
 
 export default function News() {
-  const [selectedArticle, setSelectedArticle] = useState<typeof news[0] | null>(null);
+  const [selectedArticle, setSelectedArticle] = useState<any | null>(null);
+  const [news, setNews] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const news = [
-    {
-      title: 'Peace and Nation Building Initiative',
-      date: 'March 24, 2020',
-      category: 'Peace',
-      image: 'https://picsum.photos/seed/peace/800/600',
-      content: 'The Council of Anglican Provinces of Africa (CAPA) recently launched a comprehensive Peace and Nation Building Initiative aimed at fostering reconciliation and conflict resolution across the continent. This initiative brings together religious leaders, community organizers, and policymakers to address the root causes of conflict and promote sustainable peace. Through a series of workshops and grassroots dialogues, participants are equipped with mediation skills and strategies for building social cohesion. The program emphasizes the vital role of faith communities in healing divisions and advocating for justice, ensuring that every citizen can contribute to and benefit from national development.',
-    },
-    {
-      title: 'Washington DC Advocacy Visit',
-      date: 'June 2018',
-      category: 'Advocacy',
-      image: 'https://picsum.photos/seed/advocacy/800/600',
-      content: 'A delegation from CAPA recently concluded a successful advocacy visit to Washington DC, where they engaged with key policymakers, international NGOs, and faith-based organizations. The primary focus of the visit was to highlight the pressing issues facing African communities, including climate change, economic inequality, and human rights. By sharing firsthand accounts and data-driven insights, the delegation sought to influence international policy and secure support for sustainable development initiatives. The visit also strengthened partnerships with global allies, paving the way for future collaborative efforts to address these critical challenges.',
-    },
-    {
-      title: 'Communities Richer in Diversity',
-      date: 'March 24, 2020',
-      category: 'Interfaith',
-      image: 'https://picsum.photos/seed/diversity/800/600',
-      content: 'In an effort to promote interfaith harmony, CAPA has rolled out the "Communities Richer in Diversity" program. This initiative celebrates the cultural and religious diversity of Africa, viewing it as a source of strength rather than division. The program facilitates interfaith dialogues, joint community service projects, and educational campaigns that challenge stereotypes and build mutual respect. By bringing together people of different faiths to work towards common goals, such as improving local infrastructure or providing humanitarian aid, the initiative demonstrates the power of unity in diversity.',
-    },
-    {
-      title: 'Africa Regional Forum',
-      date: 'September 21, 2020',
-      category: 'Events',
-      image: 'https://picsum.photos/seed/forum/800/600',
-      content: 'The annual Africa Regional Forum, hosted by CAPA, brought together delegates from across the continent to discuss strategies for advancing the Sustainable Development Goals (SDGs). The forum featured keynote addresses from prominent leaders, panel discussions on key issues such as health, education, and environmental stewardship, and interactive workshops. Participants shared best practices, identified areas for collaboration, and developed actionable plans to address the unique challenges facing their respective regions. The event underscored CAPA\'s commitment to driving positive change through collective action and shared vision.',
-    },
-    {
-      title: 'Youth Leadership Training',
-      date: 'November 15, 2021',
-      category: 'Youth',
-      image: 'https://picsum.photos/seed/youth/800/600',
-      content: 'Recognizing the critical role of young people in shaping the future, CAPA recently concluded a comprehensive Youth Leadership Training program. The program brought together emerging leaders from various provinces, providing them with training in project management, advocacy, and ethical leadership. Through interactive sessions and mentorship, participants developed the skills necessary to initiate and lead community development projects. The training also emphasized the importance of civic engagement and social responsibility, empowering the youth to become active agents of change in their communities.',
-    },
-    {
-      title: 'Climate Action Summit',
-      date: 'August 10, 2022',
-      category: 'Environment',
-      image: 'https://picsum.photos/seed/climate/800/600',
-      content: 'In response to the growing threat of climate change, CAPA organized a Climate Action Summit that gathered environmental experts, religious leaders, and community activists. The summit focused on the disproportionate impact of climate change on vulnerable communities in Africa and explored faith-based approaches to environmental stewardship. Discussions centered on promoting sustainable agriculture, transitioning to renewable energy, and advocating for climate justice. The summit culminated in a joint declaration committing the participating provinces to implement eco-friendly practices and advocate for stronger environmental policies at the national and international levels.',
-    },
-  ];
+  useEffect(() => {
+    // Seed data if the collection is empty
+    seedDatabase().catch(console.error);
+
+    const q = query(collection(db, 'news'), orderBy('createdAt', 'desc'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const newsData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setNews(newsData);
+      setLoading(false);
+    }, (error) => {
+      console.error("Error fetching news:", error);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const [emblaRef] = useEmblaCarousel(
     { loop: true, align: 'start', skipSnaps: false },
@@ -130,52 +110,62 @@ export default function News() {
           <div className="absolute left-0 top-0 bottom-0 w-8 sm:w-16 bg-gradient-to-r from-slate-50 to-transparent z-10 pointer-events-none" />
           <div className="absolute right-0 top-0 bottom-0 w-8 sm:w-16 bg-gradient-to-l from-slate-50 to-transparent z-10 pointer-events-none" />
           
-          <div className="overflow-hidden" ref={emblaRef}>
-            <div className="flex -ml-4 sm:-ml-8 touch-pan-y py-4">
-              {news.map((item, index) => (
-                <div 
-                  key={item.title}
-                  className="flex-[0_0_100%] min-w-0 sm:flex-[0_0_50%] lg:flex-[0_0_33.333%] xl:flex-[0_0_25%] pl-4 sm:pl-8"
-                >
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: index * 0.1 }}
-                    className="bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-100 hover:shadow-xl transition-all duration-300 group h-full flex flex-col"
-                  >
-                    <div className="relative h-48 overflow-hidden flex-shrink-0">
-                      <img
-                        src={item.image}
-                        alt={item.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        referrerPolicy="no-referrer"
-                      />
-                      <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold text-blue-700 uppercase tracking-wider">
-                        {item.category}
-                      </div>
-                    </div>
-                    <div className="p-6 flex flex-col flex-grow">
-                      <div className="flex items-center text-sm text-slate-500 mb-3">
-                        <Calendar className="h-4 w-4 mr-2 flex-shrink-0" />
-                        {item.date}
-                      </div>
-                      <h3 className="text-lg font-bold text-slate-900 mb-4 group-hover:text-blue-600 transition-colors line-clamp-2 flex-grow">
-                        {item.title}
-                      </h3>
-                      <button 
-                        onClick={() => setSelectedArticle(item)}
-                        className="inline-flex items-center text-sm font-semibold text-blue-600 hover:text-blue-700 mt-auto"
-                      >
-                        Read article
-                        <ArrowRight className="ml-1 h-4 w-4" />
-                      </button>
-                    </div>
-                  </motion.div>
-                </div>
-              ))}
+          {loading ? (
+            <div className="flex justify-center items-center py-20">
+              <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
             </div>
-          </div>
+          ) : news.length > 0 ? (
+            <div className="overflow-hidden" ref={emblaRef}>
+              <div className="flex -ml-4 sm:-ml-8 touch-pan-y py-4">
+                {news.map((item, index) => (
+                  <div 
+                    key={item.id || index}
+                    className="flex-[0_0_100%] min-w-0 sm:flex-[0_0_50%] lg:flex-[0_0_33.333%] xl:flex-[0_0_25%] pl-4 sm:pl-8"
+                  >
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: index * 0.1 }}
+                      className="bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-100 hover:shadow-xl transition-all duration-300 group h-full flex flex-col"
+                    >
+                      <div className="relative h-48 overflow-hidden flex-shrink-0">
+                        <img
+                          src={item.image}
+                          alt={item.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          referrerPolicy="no-referrer"
+                        />
+                        <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold text-blue-700 uppercase tracking-wider">
+                          {item.category}
+                        </div>
+                      </div>
+                      <div className="p-6 flex flex-col flex-grow">
+                        <div className="flex items-center text-sm text-slate-500 mb-3">
+                          <Calendar className="h-4 w-4 mr-2 flex-shrink-0" />
+                          {item.date}
+                        </div>
+                        <h3 className="text-lg font-bold text-slate-900 mb-4 group-hover:text-blue-600 transition-colors line-clamp-2 flex-grow">
+                          {item.title}
+                        </h3>
+                        <button 
+                          onClick={() => setSelectedArticle(item)}
+                          className="inline-flex items-center text-sm font-semibold text-blue-600 hover:text-blue-700 mt-auto"
+                        >
+                          Read article
+                          <ArrowRight className="ml-1 h-4 w-4" />
+                        </button>
+                      </div>
+                    </motion.div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-20 text-slate-500">
+              No news articles found.
+            </div>
+          )}
         </div>
         
         <div className="mt-10 text-center md:hidden flex flex-col items-center gap-4">
