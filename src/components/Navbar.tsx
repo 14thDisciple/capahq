@@ -112,40 +112,40 @@ export default function Navbar() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="lg:hidden bg-white border-b border-slate-100 overflow-hidden"
+            className="lg:hidden bg-white border-b border-slate-100 overflow-hidden shadow-xl absolute w-full"
           >
-            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+            <div className="px-4 pt-2 pb-6 space-y-2 max-h-[calc(100dvh-5rem)] overflow-y-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-slate-400">
               {navLinks.map((link) => (
-                <div key={link.name}>
-                  <div className="flex items-center justify-between">
+                <div key={link.name} className="border-b border-slate-50 last:border-0 pb-2 last:pb-0">
+                  {link.dropdown ? (
+                    <button
+                      onClick={() => setActiveDropdown(activeDropdown === link.name ? null : link.name)}
+                      className="flex items-center justify-between w-full px-3 py-3 rounded-xl text-base font-semibold text-slate-700 hover:text-blue-700 hover:bg-slate-50 transition-colors"
+                    >
+                      {link.name}
+                      <ChevronDown className={`h-5 w-5 transition-transform duration-300 ${activeDropdown === link.name ? 'rotate-180 text-blue-700' : 'text-slate-400'}`} />
+                    </button>
+                  ) : (
                     <a
                       href={link.href}
-                      className="block px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:text-blue-700 hover:bg-slate-50 flex-1"
-                      onClick={() => !link.dropdown && setIsOpen(false)}
+                      className="block px-3 py-3 rounded-xl text-base font-semibold text-slate-700 hover:text-blue-700 hover:bg-slate-50 transition-colors"
+                      onClick={() => setIsOpen(false)}
                     >
                       {link.name}
                     </a>
-                    {link.dropdown && (
-                      <button 
-                        onClick={() => setActiveDropdown(activeDropdown === link.name ? null : link.name)}
-                        className="p-2 text-slate-500 hover:text-blue-700 hover:bg-slate-50 rounded-md"
-                      >
-                        <ChevronDown className={`h-5 w-5 transition-transform ${activeDropdown === link.name ? 'rotate-180' : ''}`} />
-                      </button>
-                    )}
-                  </div>
+                  )}
                   
                   {/* Mobile Dropdown */}
                   <AnimatePresence>
                     {link.dropdown && activeDropdown === link.name && (
                       <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="overflow-hidden bg-slate-50 rounded-lg mx-2 mt-1"
+                        initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                        animate={{ opacity: 1, height: 'auto', marginTop: 8 }}
+                        exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                        className="overflow-hidden bg-slate-50/80 rounded-xl mx-2"
                       >
                         <div className="py-2">
-                          <div className="px-4 py-1">
+                          <div className="px-4 py-2">
                             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">External Partners</span>
                           </div>
                           {link.dropdown.map((item, idx) => (
@@ -154,11 +154,11 @@ export default function Navbar() {
                               href={item.url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="flex items-center justify-between pl-4 pr-3 py-2.5 text-sm text-slate-600 hover:text-blue-700 hover:bg-blue-100 transition-colors"
+                              className="flex items-center justify-between pl-4 pr-4 py-3 text-sm font-medium text-slate-600 hover:text-blue-700 hover:bg-blue-100/50 transition-colors rounded-lg mx-2"
                               onClick={() => setIsOpen(false)}
                             >
                               <span className="truncate pr-2">{item.name}</span>
-                              <ExternalLink className="h-3.5 w-3.5 flex-shrink-0 opacity-50" />
+                              <ExternalLink className="h-4 w-4 flex-shrink-0 opacity-40" />
                             </a>
                           ))}
                         </div>
@@ -167,13 +167,15 @@ export default function Navbar() {
                   </AnimatePresence>
                 </div>
               ))}
-              <a
-                href="#donate"
-                className="block w-full text-center mt-4 px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-700 hover:bg-blue-800"
-                onClick={() => setIsOpen(false)}
-              >
-                Donate
-              </a>
+              <div className="pt-4 px-2">
+                <a
+                  href="#donate"
+                  className="flex items-center justify-center w-full px-5 py-3.5 border border-transparent text-base font-bold rounded-xl text-white bg-blue-700 hover:bg-blue-800 shadow-md shadow-blue-200 transition-all active:scale-[0.98]"
+                  onClick={() => setIsOpen(false)}
+                >
+                  Donate to CAPA
+                </a>
+              </div>
             </div>
           </motion.div>
         )}

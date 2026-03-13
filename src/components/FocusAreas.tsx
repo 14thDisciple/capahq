@@ -9,7 +9,7 @@ export default function FocusAreas() {
     {
       title: 'Peace and Nation Building',
       description: 'Fostering reconciliation, conflict resolution, and active participation in national development across the continent.',
-      details: 'Our Peace and Nation Building initiative focuses on equipping local church leaders with mediation and conflict resolution skills. We facilitate community dialogues, support post-conflict reconciliation efforts, and advocate for policies that promote social cohesion and democratic participation across African nations.',
+      fullDescription: 'Our Peace and Nation Building initiative focuses on healing communities torn apart by conflict. We train local leaders in mediation, support grassroots reconciliation efforts, and advocate for policies that promote social cohesion and justice. By empowering individuals to become peacemakers, we aim to build resilient societies where every citizen can thrive in safety and harmony.',
       icon: Shield,
       color: 'text-blue-600',
       bg: 'bg-blue-50',
@@ -17,7 +17,7 @@ export default function FocusAreas() {
     {
       title: 'Economic Empowerment',
       description: 'Promoting sustainable livelihoods, entrepreneurship, and economic resilience within communities.',
-      details: 'We believe in empowering communities to achieve economic independence. This program provides micro-finance opportunities, vocational training for youth and women, and supports agricultural cooperatives. By fostering entrepreneurship, we aim to build resilient local economies that can withstand global challenges.',
+      fullDescription: 'Economic Empowerment is central to our mission of lifting communities out of poverty. We provide micro-grants, vocational training, and mentorship to aspiring entrepreneurs, with a special focus on women and youth. Our programs are designed to create sustainable income streams, improve financial literacy, and foster economic independence, enabling families to build a better future.',
       icon: TrendingUp,
       color: 'text-emerald-600',
       bg: 'bg-emerald-50',
@@ -25,7 +25,7 @@ export default function FocusAreas() {
     {
       title: 'Church Life & Interfaith Relations',
       description: 'Strengthening Anglican identity while building bridges of understanding with other faiths.',
-      details: 'This focus area nurtures the spiritual growth of our congregations while actively engaging in interfaith dialogue. We organize joint community service projects with other religious groups, host theological exchanges, and work together to address common social issues, promoting a culture of peace and mutual respect.',
+      fullDescription: 'We believe that faith should be a unifying force, not a source of division. Our Church Life & Interfaith Relations program works to deepen the spiritual life of our congregations while actively engaging in dialogue and collaborative projects with other religious communities. Through shared initiatives, we promote mutual respect, combat religious extremism, and work together for the common good.',
       icon: Users,
       color: 'text-purple-600',
       bg: 'bg-purple-50',
@@ -33,7 +33,7 @@ export default function FocusAreas() {
     {
       title: 'Environmental Stewardship',
       description: 'Advocating for creation care, climate justice, and food security in vulnerable regions.',
-      details: 'Recognizing the urgent threat of climate change, we mobilize our network for environmental conservation. Initiatives include tree planting campaigns, promoting sustainable farming practices, and advocating for climate justice at regional and international forums to protect vulnerable communities from ecological degradation.',
+      fullDescription: 'Recognizing the urgent threat of climate change, our Environmental Stewardship program advocates for sustainable practices and policies. We work with communities to implement climate-smart agriculture, promote reforestation, and improve access to clean water. By educating and mobilizing local populations, we strive to protect our natural resources and ensure food security for future generations.',
       icon: Leaf,
       color: 'text-green-600',
       bg: 'bg-green-50',
@@ -41,7 +41,7 @@ export default function FocusAreas() {
     {
       title: 'Safe Migration & Human Trafficking',
       description: 'Addressing emerging issues, protecting the vulnerable, and advocating for safe movement.',
-      details: 'We are committed to protecting the rights and dignity of migrants and refugees. Our work involves raising awareness about the dangers of human trafficking, providing safe havens and legal support for victims, and advocating for humane migration policies that respect the fundamental human rights of all people on the move.',
+      fullDescription: 'The crisis of unsafe migration and human trafficking requires a coordinated and compassionate response. We provide support and sanctuary for victims, raise awareness about the dangers of irregular migration, and advocate for the rights of migrants and refugees. Our goal is to address the root causes of forced displacement and ensure that all people can move safely and with dignity.',
       icon: Navigation,
       color: 'text-rose-600',
       bg: 'bg-rose-50',
@@ -90,7 +90,7 @@ export default function FocusAreas() {
         </div>
       </div>
 
-      {/* Details Modal */}
+      {/* Focus Area Details Modal */}
       <AnimatePresence>
         {selectedArea && (
           <div 
@@ -105,7 +105,7 @@ export default function FocusAreas() {
               initial={{ opacity: 0, scale: 0.95, y: 20 }} 
               animate={{ opacity: 1, scale: 1, y: 0 }} 
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-2xl max-h-[90vh] flex flex-col bg-white rounded-3xl shadow-2xl overflow-hidden z-10"
+              className="relative w-full max-w-2xl max-h-[90vh] sm:max-h-[85vh] flex flex-col bg-white rounded-3xl shadow-2xl overflow-hidden z-10"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="p-4 sm:p-6 border-b border-slate-100 flex items-start justify-between flex-shrink-0">
@@ -114,10 +114,7 @@ export default function FocusAreas() {
                     <selectedArea.icon className="w-6 h-6 sm:w-8 sm:h-8" />
                   </div>
                   <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className={`text-[10px] sm:text-xs font-bold ${selectedArea.color} uppercase tracking-wider`}>Focus Area</span>
-                    </div>
-                    <h3 className="text-xl sm:text-2xl font-bold text-slate-900 line-clamp-2">{selectedArea.title}</h3>
+                    <h3 className="text-xl sm:text-2xl font-bold text-slate-900">{selectedArea.title}</h3>
                   </div>
                 </div>
                 <button 
@@ -128,22 +125,16 @@ export default function FocusAreas() {
                 </button>
               </div>
               
-              <div className="p-4 sm:p-6 bg-slate-50/50 overflow-y-auto flex-1">
-                <h4 className="text-lg font-semibold text-slate-900 mb-3">Overview</h4>
-                <p className="text-slate-600 text-base sm:text-lg leading-relaxed mb-6">
-                  {selectedArea.description}
-                </p>
-                
-                <h4 className="text-lg font-semibold text-slate-900 mb-3">Our Approach</h4>
-                <p className="text-slate-600 text-base sm:text-lg leading-relaxed">
-                  {selectedArea.details}
+              <div className="p-4 sm:p-6 sm:p-8 overflow-y-auto flex-1 min-h-0 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-slate-400">
+                <p className="text-slate-700 text-base sm:text-lg leading-relaxed">
+                  {selectedArea.fullDescription}
                 </p>
               </div>
               
-              <div className="px-4 sm:px-6 py-4 border-t border-slate-100 bg-white flex justify-end flex-shrink-0">
+              <div className="px-4 sm:px-6 py-4 sm:py-5 border-t border-slate-100 bg-slate-50 flex justify-end flex-shrink-0">
                 <button 
                   onClick={() => setSelectedArea(null)}
-                  className="inline-flex items-center justify-center px-6 py-2.5 bg-slate-100 text-slate-700 font-medium rounded-xl hover:bg-slate-200 transition-colors focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 outline-none"
+                  className="px-6 py-2.5 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition-colors shadow-sm shadow-blue-200"
                 >
                   Close
                 </button>

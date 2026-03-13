@@ -1,7 +1,66 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { FileText, Download, BookOpen, ExternalLink, FileDown, Search, Filter, ArrowUpDown, Tag, Info, X, ChevronRight, ChevronLeft, LayoutGrid, Eye, Share2, ChevronDown, Sparkles, Loader2 } from 'lucide-react';
 import { GoogleGenAI } from "@google/genai";
+
+function FilterDropdown({ icon: Icon, value, options, onChange }: { icon: any, value: string, options: {value: string, label: string}[], onChange: (val: string) => void }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (ref.current && !ref.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const selectedOption = options.find(o => o.value === value) || options[0];
+
+  return (
+    <div className="relative" ref={ref}>
+      <motion.button
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full flex items-center justify-between pl-9 pr-4 py-2.5 text-sm border-slate-200 rounded-xl bg-slate-50 border font-medium text-slate-700 hover:border-blue-300 hover:shadow-sm transition-all text-left"
+      >
+        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          <Icon className="h-4 w-4 text-blue-500" />
+        </div>
+        <span className="truncate block">{selectedOption.label}</span>
+        <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+      </motion.button>
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -10, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, scale: 0.95 }}
+            transition={{ duration: 0.15 }}
+            className="absolute z-20 w-full mt-2 bg-white border border-slate-100 rounded-xl shadow-xl overflow-hidden max-h-60 overflow-y-auto"
+          >
+            {options.map(opt => (
+              <motion.button
+                key={opt.value}
+                whileHover={{ x: 4, backgroundColor: 'rgb(248 250 252)' }}
+                onClick={() => { onChange(opt.value); setIsOpen(false); }}
+                className={`w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center justify-between ${
+                  value === opt.value ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-slate-600'
+                }`}
+              >
+                {opt.label}
+                {value === opt.value && <motion.div layoutId={`check-${options[0].label}`} className="w-1.5 h-1.5 rounded-full bg-blue-600" />}
+              </motion.button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
 
 export default function Resources() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -135,6 +194,15 @@ export default function Resources() {
   const allTags = ['All', ...Array.from(new Set(resources.flatMap(r => r.tags)))].sort();
   const featuredResources = resources.filter(r => r.featured);
 
+  const tagOptions = allTags.map(tag => ({ value: tag, label: tag === 'All' ? 'All Tags' : tag }));
+  const typeOptions = types.map(type => ({ value: type, label: type === 'All' ? 'All Types' : type }));
+  const sortOptions = [
+    { value: 'relevance', label: 'Relevance' },
+    { value: 'date', label: 'Newest First' },
+    { value: 'title', label: 'Alphabetical (A-Z)' },
+    { value: 'size', label: 'File Size' }
+  ];
+
   const getRelevanceScore = (resource: any, query: string) => {
     if (!query) return 0;
     const q = query.toLowerCase();
@@ -258,23 +326,38 @@ export default function Resources() {
                   </div>
                   <span className="text-xs font-bold text-slate-400 bg-slate-100 px-3 py-1 rounded-full">{resource.category}</span>
                 </div>
-                <h4 className="text-xl font-bold text-slate-900 mb-2 line-clamp-2">{resource.title}</h4>
-                <p className="text-sm text-slate-500 mb-6 flex-grow line-clamp-3">{resource.description}</p>
+                <h4 className="text-xl font-bold text-slate-900 mb-2 line-clamp-2 min-h-[3.5rem]">{resource.title}</h4>
+                <p className="text-sm text-slate-500 mb-6 line-clamp-3 min-h-[3.75rem]">{resource.description}</p>
                 <div className="flex items-center justify-between mt-auto pt-4 border-t border-slate-50">
                   <div className="flex gap-2 overflow-hidden">
                     {resource.tags.slice(0, 2).map(tag => (
-                      <span key={tag} className="text-[10px] font-semibold uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-1 rounded-md whitespace-nowrap">
+                      <motion.button 
+                        key={tag} 
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={(e) => { e.stopPropagation(); setSelectedTag(tag); }}
+                        className="text-[10px] font-semibold uppercase tracking-wider text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 px-2 py-1 rounded-md whitespace-nowrap transition-colors"
+                      >
                         {tag}
-                      </span>
+                      </motion.button>
                     ))}
                   </div>
-                  <button 
-                    onClick={() => setSelectedResource(resource)}
-                    className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-md shadow-blue-200"
-                    aria-label={`View ${resource.title}`}
-                  >
-                    <Eye className="w-4 h-4" />
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); handleShare(resource); }}
+                      className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-slate-50 text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-colors"
+                      aria-label={`Share ${resource.title}`}
+                    >
+                      <Share2 className="w-3.5 h-3.5" />
+                    </button>
+                    <button 
+                      onClick={() => setSelectedResource(resource)}
+                      className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-md shadow-blue-200"
+                      aria-label={`View ${resource.title}`}
+                    >
+                      <Eye className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
               </motion.div>
             ))}
@@ -320,13 +403,21 @@ export default function Resources() {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => setSelectedCategory(cat)}
-                    className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                    className={`relative whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                       selectedCategory === cat 
-                        ? 'bg-blue-600 text-white shadow-md shadow-blue-200' 
+                        ? 'text-white' 
                         : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
                     }`}
                   >
-                    {cat === 'All' ? 'All Categories' : cat}
+                    {selectedCategory === cat && (
+                      <motion.div
+                        layoutId="activeCategory"
+                        className="absolute inset-0 bg-blue-600 rounded-full shadow-md shadow-blue-200"
+                        initial={false}
+                        transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                      />
+                    )}
+                    <span className="relative z-10">{cat === 'All' ? 'All Categories' : cat}</span>
                   </motion.button>
                 ))}
               </div>
@@ -336,66 +427,17 @@ export default function Resources() {
             <div className="flex flex-col sm:flex-row gap-4 pt-4 border-t border-slate-100">
               <div className="flex-1">
                 <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Filter by Tag</label>
-                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Tag className="h-4 w-4 text-blue-500" />
-                  </div>
-                  <select
-                    className="block w-full pl-9 pr-10 py-2.5 text-sm border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-xl bg-slate-50 focus:bg-white border appearance-none transition-all cursor-pointer font-medium text-slate-700 hover:border-blue-300 hover:shadow-sm"
-                    value={selectedTag}
-                    onChange={(e) => setSelectedTag(e.target.value)}
-                  >
-                    {allTags.map(tag => (
-                      <option key={tag} value={tag}>{tag === 'All' ? 'All Tags' : tag}</option>
-                    ))}
-                  </select>
-                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                    <ChevronDown className="h-4 w-4 text-slate-400" />
-                  </div>
-                </motion.div>
+                <FilterDropdown icon={Tag} value={selectedTag} options={tagOptions} onChange={setSelectedTag} />
               </div>
 
               <div className="flex-1">
                 <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Filter by Type</label>
-                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Filter className="h-4 w-4 text-blue-500" />
-                  </div>
-                  <select
-                    className="block w-full pl-9 pr-10 py-2.5 text-sm border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-xl bg-slate-50 focus:bg-white border appearance-none transition-all cursor-pointer font-medium text-slate-700 hover:border-blue-300 hover:shadow-sm"
-                    value={filterType}
-                    onChange={(e) => setFilterType(e.target.value)}
-                  >
-                    {types.map(type => (
-                      <option key={type} value={type}>{type === 'All' ? 'All Types' : type}</option>
-                    ))}
-                  </select>
-                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                    <ChevronDown className="h-4 w-4 text-slate-400" />
-                  </div>
-                </motion.div>
+                <FilterDropdown icon={Filter} value={filterType} options={typeOptions} onChange={setFilterType} />
               </div>
               
               <div className="flex-1">
                 <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Sort By</label>
-                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <ArrowUpDown className="h-4 w-4 text-blue-500" />
-                  </div>
-                  <select
-                    className="block w-full pl-9 pr-10 py-2.5 text-sm border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-xl bg-slate-50 focus:bg-white border appearance-none transition-all cursor-pointer font-medium text-slate-700 hover:border-blue-300 hover:shadow-sm"
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value)}
-                  >
-                    <option value="relevance">Relevance</option>
-                    <option value="date">Newest First</option>
-                    <option value="title">Alphabetical (A-Z)</option>
-                    <option value="size">File Size</option>
-                  </select>
-                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                    <ChevronDown className="h-4 w-4 text-slate-400" />
-                  </div>
-                </motion.div>
+                <FilterDropdown icon={ArrowUpDown} value={sortBy} options={sortOptions} onChange={setSortBy} />
               </div>
             </div>
           </div>
@@ -432,20 +474,29 @@ export default function Resources() {
                     <p className="text-sm text-slate-500 line-clamp-1 mb-3">{resource.description}</p>
                     <div className="flex gap-2 flex-wrap">
                       {resource.tags.map(tag => (
-                        <button 
+                        <motion.button 
                           key={tag} 
-                          onClick={() => setSelectedTag(tag)}
-                          className="text-[10px] font-medium text-slate-500 bg-slate-100 hover:bg-slate-200 hover:text-slate-700 px-2 py-1 rounded transition-colors"
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          onClick={(e) => { e.stopPropagation(); setSelectedTag(tag); }}
+                          className="text-[10px] font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 px-2 py-1 rounded-md transition-colors"
                         >
                           #{tag}
-                        </button>
+                        </motion.button>
                       ))}
                     </div>
                   </div>
-                  <div className="mt-4 sm:mt-0 sm:ml-6 flex-shrink-0 w-full sm:w-auto flex justify-end gap-3">
+                  <div className="mt-4 sm:mt-0 sm:ml-6 flex-shrink-0 w-full sm:w-auto flex justify-end gap-2 sm:gap-3">
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); handleShare(resource); }}
+                      className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-slate-50 border border-slate-200 text-slate-500 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 transition-colors"
+                      aria-label={`Share ${resource.title}`}
+                    >
+                      <Share2 className="w-4 h-4" />
+                    </button>
                     <button 
                       onClick={() => setSelectedResource(resource)}
-                      className="inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 font-medium hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 transition-colors w-full sm:w-auto" 
+                      className="inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 font-medium hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 transition-colors flex-1 sm:flex-none" 
                     >
                       <Eye className="w-4 h-4 mr-2" />
                       Details
@@ -453,12 +504,12 @@ export default function Resources() {
                     <a 
                       href={resource.url}
                       download={`${resource.title.replace(/\s+/g, '_')}.pdf`}
-                      className="inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors w-full sm:w-auto shadow-sm shadow-blue-200 focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 outline-none" 
+                      className="inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors flex-1 sm:flex-none shadow-sm shadow-blue-200 focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 outline-none" 
                       aria-label={`Download ${resource.title} (${resource.type}, ${resource.size})`}
                       title={`Download ${resource.title}`}
                     >
-                      <Download className="w-4 h-4 mr-2" aria-hidden="true" />
-                      Download
+                      <Download className="w-4 h-4 sm:mr-2" aria-hidden="true" />
+                      <span className="hidden sm:inline">Download</span>
                       <span className="sr-only"> {resource.title} file</span>
                     </a>
                   </div>
@@ -488,35 +539,49 @@ export default function Resources() {
         {/* Pagination Controls */}
         {totalPages > 1 && (
           <div className="flex items-center justify-center gap-2 mb-16">
-            <button
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
               disabled={currentPage === 1}
               className="p-2 rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               <ChevronLeft className="w-5 h-5" />
-            </button>
-            <div className="flex gap-1">
+            </motion.button>
+            <div className="flex gap-1 bg-white border border-slate-200 rounded-xl p-1 shadow-sm">
               {Array.from({ length: totalPages }).map((_, i) => (
-                <button
+                <motion.button
                   key={i}
+                  whileHover={{ scale: currentPage === i + 1 ? 1 : 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                   onClick={() => setCurrentPage(i + 1)}
-                  className={`w-10 h-10 rounded-xl font-medium transition-colors ${
+                  className={`relative w-10 h-10 rounded-lg font-medium text-sm transition-colors ${
                     currentPage === i + 1 
-                      ? 'bg-blue-600 text-white shadow-sm shadow-blue-200' 
-                      : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-blue-600'
+                      ? 'text-white' 
+                      : 'text-slate-600 hover:text-blue-600 hover:bg-slate-50'
                   }`}
                 >
-                  {i + 1}
-                </button>
+                  {currentPage === i + 1 && (
+                    <motion.div
+                      layoutId="activePage"
+                      className="absolute inset-0 bg-blue-600 rounded-lg shadow-sm shadow-blue-200"
+                      initial={false}
+                      transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                    />
+                  )}
+                  <span className="relative z-10">{i + 1}</span>
+                </motion.button>
               ))}
             </div>
-            <button
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
               disabled={currentPage === totalPages}
               className="p-2 rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               <ChevronRight className="w-5 h-5" />
-            </button>
+            </motion.button>
           </div>
         )}
       </div>
@@ -536,7 +601,7 @@ export default function Resources() {
               initial={{ opacity: 0, scale: 0.95, y: 20 }} 
               animate={{ opacity: 1, scale: 1, y: 0 }} 
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-2xl max-h-[90vh] flex flex-col bg-white rounded-3xl shadow-2xl overflow-hidden z-10"
+              className="relative w-full max-w-2xl max-h-[90vh] sm:max-h-[85vh] flex flex-col bg-white rounded-3xl shadow-2xl overflow-hidden z-10"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="p-4 sm:p-6 border-b border-slate-100 flex items-start justify-between flex-shrink-0">
@@ -559,7 +624,7 @@ export default function Resources() {
                 </button>
               </div>
               
-              <div className="p-4 sm:p-6 bg-slate-50/50 overflow-y-auto flex-1">
+              <div className="p-4 sm:p-6 bg-slate-50/50 overflow-y-auto flex-1 min-h-0 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-slate-400">
                 <p className="text-slate-600 text-base sm:text-lg leading-relaxed mb-6">
                   {selectedResource.description}
                 </p>
@@ -663,7 +728,7 @@ export default function Resources() {
               initial={{ opacity: 0, scale: 0.95, y: 20 }} 
               animate={{ opacity: 1, scale: 1, y: 0 }} 
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-2xl max-h-[90vh] flex flex-col bg-white rounded-3xl shadow-2xl overflow-hidden z-10"
+              className="relative w-full max-w-2xl max-h-[90vh] sm:max-h-[85vh] flex flex-col bg-white rounded-3xl shadow-2xl overflow-hidden z-10"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="px-4 sm:px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 flex-shrink-0">
@@ -678,7 +743,7 @@ export default function Resources() {
                   <X className="w-5 h-5" />
                 </button>
               </div>
-              <div className="p-4 sm:p-6 sm:p-8 overflow-y-auto flex-1">
+              <div className="p-4 sm:p-6 sm:p-8 overflow-y-auto flex-1 min-h-0 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-slate-400">
                 <div className="prose prose-slate max-w-none">
                   <p className="text-slate-600 leading-relaxed mb-6">
                     The Council of Anglican Provinces of Africa (CAPA) is committed to equipping the church with high-quality, relevant, and accessible materials. Our resource center serves as a central repository for:
@@ -739,7 +804,7 @@ export default function Resources() {
               initial={{ opacity: 0, scale: 0.95, y: 20 }} 
               animate={{ opacity: 1, scale: 1, y: 0 }} 
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-2xl flex flex-col bg-white rounded-3xl shadow-2xl overflow-hidden z-10"
+              className="relative w-full max-w-2xl max-h-[90vh] flex flex-col bg-white rounded-3xl shadow-2xl overflow-hidden z-10"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="px-4 sm:px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 flex-shrink-0">
@@ -754,7 +819,7 @@ export default function Resources() {
                   <X className="w-5 h-5" />
                 </button>
               </div>
-              <div className="p-4 sm:p-6 sm:p-8 overflow-y-auto flex-1 flex flex-col items-center">
+              <div className="p-4 sm:p-6 sm:p-8 overflow-y-auto flex-1 flex flex-col items-center min-h-0">
                 <p className="text-slate-600 text-center mb-6">
                   Generate an inspiring illustration based on the currently selected category: <strong className="text-slate-900">{selectedCategory === 'All' ? 'Community Development and Faith' : selectedCategory}</strong>.
                 </p>
