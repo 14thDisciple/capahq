@@ -1,14 +1,25 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Globe, Mail, Phone, MapPin, Facebook, Twitter, Instagram } from 'lucide-react';
 
 export default function Footer() {
+  const [logoError, setLogoError] = useState(false);
+
   return (
     <footer className="bg-slate-900 text-slate-300 py-16 border-t border-slate-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
           <div className="space-y-6">
             <a href="#" className="flex items-center gap-2">
-              <Globe className="h-8 w-8 text-blue-400 flex-shrink-0" />
+              {!logoError ? (
+                <img 
+                  src="/capa-logo.png" 
+                  alt="CAPA Logo" 
+                  className="h-12 w-auto object-contain brightness-0 invert"
+                  onError={() => setLogoError(true)}
+                />
+              ) : (
+                <Globe className="h-8 w-8 text-blue-400 flex-shrink-0" />
+              )}
               <div className="flex flex-col">
                 <span className="font-bold text-xl leading-tight text-white">CAPA</span>
                 <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider hidden sm:block">Council of Anglican Provinces of Africa</span>

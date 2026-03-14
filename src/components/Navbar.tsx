@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from 'motion/react';
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+  const [logoError, setLogoError] = useState(false);
 
   const navLinks = [
     { name: 'Home', href: '#' },
@@ -32,7 +33,16 @@ export default function Navbar() {
         <div className="flex justify-between h-20">
           <div className="flex items-center">
             <a href="#" className="flex items-center gap-2">
-              <Globe className="h-8 w-8 text-blue-700 flex-shrink-0" />
+              {!logoError ? (
+                <img 
+                  src="/capa-logo.png" 
+                  alt="CAPA Logo" 
+                  className="h-12 w-auto object-contain"
+                  onError={() => setLogoError(true)}
+                />
+              ) : (
+                <Globe className="h-8 w-8 text-blue-700 flex-shrink-0" />
+              )}
               <div className="flex flex-col">
                 <span className="font-bold text-xl leading-tight text-slate-900">CAPA</span>
                 <span className="text-[10px] font-medium text-slate-500 uppercase tracking-wider hidden sm:block">Council of Anglican Provinces of Africa</span>
