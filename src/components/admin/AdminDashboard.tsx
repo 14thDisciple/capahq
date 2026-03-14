@@ -1,28 +1,48 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { LogOut, Plus, Edit, Trash2, LayoutDashboard, FileText, Image as ImageIcon } from 'lucide-react';
+import { LogOut, Plus, Edit, Trash2, LayoutDashboard, FileText, Image as ImageIcon, Users, Settings, Briefcase, Map, FileDown } from 'lucide-react';
 import { collection, getDocs, deleteDoc, doc, onSnapshot, query, orderBy } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import NewsEditor from './NewsEditor';
 import CarouselManager from './CarouselManager';
+import AdminUsersManager from './AdminUsersManager';
+import SettingsManager from './SettingsManager';
+import ResourcesManager from './ResourcesManager';
+import PartnersManager from './PartnersManager';
+import ProvincesManager from './ProvincesManager';
+import ThematicAreasManager from './ThematicAreasManager';
 
 export default function AdminDashboard() {
-  const { user, signInWithGoogle, logout } = useAuth();
+  const { user, isAdmin, signInWithGoogle, logout } = useAuth();
   const navigate = useNavigate();
 
-  if (!user) {
+  if (!user || !isAdmin) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full text-center">
           <h2 className="text-2xl font-bold text-slate-900 mb-6">Admin Login</h2>
-          <p className="text-slate-600 mb-8">Please sign in with your authorized Google account to access the admin dashboard.</p>
-          <button
-            onClick={signInWithGoogle}
-            className="w-full flex items-center justify-center px-4 py-3 border border-transparent text-base font-medium rounded-xl text-white bg-blue-600 hover:bg-blue-700 transition-colors"
-          >
-            Sign in with Google
-          </button>
+          {user && !isAdmin ? (
+            <div className="mb-6">
+              <p className="text-red-600 mb-4">You do not have permission to access the admin dashboard.</p>
+              <button
+                onClick={logout}
+                className="w-full flex items-center justify-center px-4 py-3 border border-transparent text-base font-medium rounded-xl text-white bg-slate-600 hover:bg-slate-700 transition-colors"
+              >
+                Sign Out
+              </button>
+            </div>
+          ) : (
+            <>
+              <p className="text-slate-600 mb-8">Please sign in with your authorized Google account to access the admin dashboard.</p>
+              <button
+                onClick={signInWithGoogle}
+                className="w-full flex items-center justify-center px-4 py-3 border border-transparent text-base font-medium rounded-xl text-white bg-blue-600 hover:bg-blue-700 transition-colors"
+              >
+                Sign in with Google
+              </button>
+            </>
+          )}
         </div>
       </div>
     );
@@ -35,10 +55,14 @@ export default function AdminDashboard() {
         <div className="p-6 border-b border-slate-200">
           <h1 className="text-xl font-bold text-slate-900">CAPA Admin</h1>
         </div>
-        <nav className="flex-1 p-4 space-y-2">
+        <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
           <Link to="/admin" className="flex items-center px-4 py-3 text-slate-700 hover:bg-slate-50 rounded-xl transition-colors">
             <LayoutDashboard className="w-5 h-5 mr-3" />
             Dashboard
+          </Link>
+          <Link to="/admin/settings" className="flex items-center px-4 py-3 text-slate-700 hover:bg-slate-50 rounded-xl transition-colors">
+            <Settings className="w-5 h-5 mr-3" />
+            Global Settings
           </Link>
           <Link to="/admin/news" className="flex items-center px-4 py-3 text-slate-700 hover:bg-slate-50 rounded-xl transition-colors">
             <FileText className="w-5 h-5 mr-3" />
@@ -47,6 +71,26 @@ export default function AdminDashboard() {
           <Link to="/admin/carousel" className="flex items-center px-4 py-3 text-slate-700 hover:bg-slate-50 rounded-xl transition-colors">
             <ImageIcon className="w-5 h-5 mr-3" />
             Manage Carousel
+          </Link>
+          <Link to="/admin/resources" className="flex items-center px-4 py-3 text-slate-700 hover:bg-slate-50 rounded-xl transition-colors">
+            <FileDown className="w-5 h-5 mr-3" />
+            Publications & Docs
+          </Link>
+          <Link to="/admin/partners" className="flex items-center px-4 py-3 text-slate-700 hover:bg-slate-50 rounded-xl transition-colors">
+            <Briefcase className="w-5 h-5 mr-3" />
+            Manage Partners
+          </Link>
+          <Link to="/admin/provinces" className="flex items-center px-4 py-3 text-slate-700 hover:bg-slate-50 rounded-xl transition-colors">
+            <Map className="w-5 h-5 mr-3" />
+            Manage Provinces
+          </Link>
+          <Link to="/admin/thematic-areas" className="flex items-center px-4 py-3 text-slate-700 hover:bg-slate-50 rounded-xl transition-colors">
+            <LayoutDashboard className="w-5 h-5 mr-3" />
+            Thematic Areas
+          </Link>
+          <Link to="/admin/users" className="flex items-center px-4 py-3 text-slate-700 hover:bg-slate-50 rounded-xl transition-colors">
+            <Users className="w-5 h-5 mr-3" />
+            Admin Users
           </Link>
         </nav>
         <div className="p-4 border-t border-slate-200">
@@ -75,10 +119,16 @@ export default function AdminDashboard() {
         <div className="p-8">
           <Routes>
             <Route path="/" element={<DashboardHome />} />
+            <Route path="/settings" element={<SettingsManager />} />
             <Route path="/news" element={<NewsList />} />
             <Route path="/news/new" element={<NewsEditor />} />
             <Route path="/news/edit/:id" element={<NewsEditor />} />
             <Route path="/carousel" element={<CarouselManager />} />
+            <Route path="/resources" element={<ResourcesManager />} />
+            <Route path="/partners" element={<PartnersManager />} />
+            <Route path="/provinces" element={<ProvincesManager />} />
+            <Route path="/thematic-areas" element={<ThematicAreasManager />} />
+            <Route path="/users" element={<AdminUsersManager />} />
           </Routes>
         </div>
       </main>

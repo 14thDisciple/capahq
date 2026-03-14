@@ -44,6 +44,20 @@ const initialNews = [
     image: 'https://picsum.photos/seed/climate/800/600',
     content: 'In response to the growing threat of climate change, CAPA organized a Climate Action Summit that gathered environmental experts, religious leaders, and community activists. The summit focused on the disproportionate impact of climate change on vulnerable communities in Africa and explored faith-based approaches to environmental stewardship. Discussions centered on promoting sustainable agriculture, transitioning to renewable energy, and advocating for climate justice. The summit culminated in a joint declaration committing the participating provinces to implement eco-friendly practices and advocate for stronger environmental policies at the national and international levels.',
   },
+  {
+    title: 'Women in Leadership Conference',
+    date: 'May 12, 2023',
+    category: 'Empowerment',
+    image: 'https://picsum.photos/seed/women-leaders/800/600',
+    content: 'CAPA hosted a landmark conference celebrating and empowering women in leadership roles across the Anglican Communion in Africa. The event highlighted the crucial contributions of women in ministry, community development, and peacebuilding. Keynote speakers shared inspiring stories of overcoming challenges and driving positive change. Workshops focused on capacity building, mentorship, and strategies for increasing female representation in decision-making bodies. The conference concluded with a strong commitment to fostering inclusive leadership and supporting the next generation of women leaders.',
+  },
+  {
+    title: 'Health and Wellness Initiative',
+    date: 'October 5, 2023',
+    category: 'Health',
+    image: 'https://picsum.photos/seed/health-clinic/800/600',
+    content: 'In partnership with local health organizations, CAPA launched a comprehensive Health and Wellness Initiative aimed at improving access to healthcare in underserved communities. The program includes mobile clinics, health education campaigns, and the distribution of essential medical supplies. A key focus is on maternal and child health, as well as combating preventable diseases. By integrating health services with community outreach, the initiative seeks to promote holistic well-being and ensure that vulnerable populations receive the care they need.',
+  },
 ];
 
 const initialHeroSlides = [
@@ -67,6 +81,131 @@ const initialHeroSlides = [
     title: "Equipping the Next Generation of Leaders.",
     description: "Investing in education, leadership training, and spiritual growth to ensure a vibrant future for the church and society.",
     order: 2
+  },
+  {
+    image: "https://picsum.photos/seed/african-landscape/1920/1080?blur=2",
+    badge: "Environmental Stewardship",
+    title: "Caring for God's Creation.",
+    description: "Promoting sustainable practices and advocating for climate justice to protect our environment for future generations.",
+    order: 3
+  },
+  {
+    image: "https://picsum.photos/seed/community-gathering/1920/1080?blur=2",
+    badge: "Community Development",
+    title: "Transforming Lives Through Holistic Ministry.",
+    description: "Working together to address poverty, improve health, and build resilient communities across the continent.",
+    order: 4
+  }
+];
+
+const initialPartners = [
+  {
+    name: 'Anglican Communion',
+    logoUrl: 'https://picsum.photos/seed/partner1/200/100',
+    websiteUrl: 'https://www.anglicancommunion.org/'
+  },
+  {
+    name: 'Anglican Alliance',
+    logoUrl: 'https://picsum.photos/seed/partner2/200/100',
+    websiteUrl: 'https://anglicanalliance.org/'
+  },
+  {
+    name: 'All Africa Conference of Churches',
+    logoUrl: 'https://picsum.photos/seed/partner3/200/100',
+    websiteUrl: 'https://aacc-ceta.org/'
+  },
+  {
+    name: 'World Council of Churches',
+    logoUrl: 'https://picsum.photos/seed/partner4/200/100',
+    websiteUrl: 'https://www.oikoumene.org/'
+  },
+  {
+    name: 'Compass Rose Society',
+    logoUrl: 'https://picsum.photos/seed/partner5/200/100',
+    websiteUrl: 'https://www.compassrosesociety.org/'
+  },
+  {
+    name: 'Lambeth Conference',
+    logoUrl: 'https://picsum.photos/seed/partner6/200/100',
+    websiteUrl: 'https://www.lambethconference.org/'
+  },
+  {
+    name: 'Tearfund',
+    logoUrl: 'https://picsum.photos/seed/partner7/200/100',
+    websiteUrl: 'https://www.tearfund.org/'
+  }
+];
+
+const initialProvinces = [
+  {
+    name: 'Church of the Province of Central Africa',
+    longitude: 27.8493,
+    latitude: -13.1339,
+    description: 'The Church of the Province of Central Africa covers Botswana, Malawi, Zambia, and Zimbabwe.',
+    countries: 'Botswana, Malawi, Zambia, Zimbabwe'
+  },
+  {
+    name: 'Province of the Anglican Church of Congo',
+    longitude: 23.6566,
+    latitude: -4.0383,
+    description: 'The Province of the Anglican Church of Congo covers the Democratic Republic of Congo and the Republic of Congo.',
+    countries: 'Democratic Republic of Congo, Republic of Congo'
+  },
+  {
+    name: 'Church of the Province of the Indian Ocean',
+    longitude: 46.8691,
+    latitude: -18.7669,
+    description: 'The Church of the Province of the Indian Ocean covers Madagascar, Mauritius, and Seychelles.',
+    countries: 'Madagascar, Mauritius, Seychelles'
+  },
+  {
+    name: 'Anglican Church of Kenya',
+    longitude: 37.9062,
+    latitude: -0.0236,
+    description: 'The Anglican Church of Kenya is a province of the Anglican Communion, covering Kenya.',
+    countries: 'Kenya'
+  },
+  {
+    name: 'Church of Nigeria (Anglican Communion)',
+    longitude: 8.6753,
+    latitude: 9.0820,
+    description: 'The Church of Nigeria is the Anglican church in Nigeria. It is the second-largest province in the Anglican Communion.',
+    countries: 'Nigeria'
+  },
+  {
+    name: 'Church of the Province of Rwanda',
+    longitude: 29.8739,
+    latitude: -1.9403,
+    description: 'The Church of the Province of Rwanda is a province of the Anglican Communion, covering Rwanda.',
+    countries: 'Rwanda'
+  },
+  {
+    name: 'Anglican Church of Southern Africa',
+    longitude: 22.9375,
+    latitude: -30.5595,
+    description: 'The Anglican Church of Southern Africa covers South Africa, Eswatini, Lesotho, Namibia, and St Helena.',
+    countries: 'South Africa, Eswatini, Lesotho, Namibia, St Helena'
+  },
+  {
+    name: 'Anglican Church of Tanzania',
+    longitude: 34.8888,
+    latitude: -6.3690,
+    description: 'The Anglican Church of Tanzania is a province of the Anglican Communion, covering Tanzania.',
+    countries: 'Tanzania'
+  },
+  {
+    name: 'Church of the Province of Uganda',
+    longitude: 32.2903,
+    latitude: 1.3733,
+    description: 'The Church of the Province of Uganda is a province of the Anglican Communion, covering Uganda.',
+    countries: 'Uganda'
+  },
+  {
+    name: 'Church of the Province of West Africa',
+    longitude: -1.0232,
+    latitude: 7.9465,
+    description: 'The Church of the Province of West Africa covers Cameroon, Cape Verde, Gambia, Ghana, Guinea, Liberia, Senegal, and Sierra Leone.',
+    countries: 'Cameroon, Cape Verde, Gambia, Ghana, Guinea, Liberia, Senegal, Sierra Leone'
   }
 ];
 
@@ -110,6 +249,44 @@ export async function seedDatabase() {
       
       await batch.commit();
       console.log('Hero slides seeded successfully!');
+    }
+
+    const partnersRef = collection(db, 'partners');
+    const partnersSnapshot = await getDocs(partnersRef);
+
+    if (partnersSnapshot.empty) {
+      console.log('Seeding database with initial partners...');
+      const batch = writeBatch(db);
+      
+      initialPartners.forEach((item) => {
+        const docRef = doc(partnersRef);
+        batch.set(docRef, { 
+          ...item, 
+          createdAt: new Date().toISOString() 
+        });
+      });
+      
+      await batch.commit();
+      console.log('Partners seeded successfully!');
+    }
+
+    const provincesRef = collection(db, 'provinces');
+    const provincesSnapshot = await getDocs(provincesRef);
+
+    if (provincesSnapshot.empty) {
+      console.log('Seeding database with initial provinces...');
+      const batch = writeBatch(db);
+      
+      initialProvinces.forEach((item) => {
+        const docRef = doc(provincesRef);
+        batch.set(docRef, { 
+          ...item, 
+          createdAt: new Date().toISOString() 
+        });
+      });
+      
+      await batch.commit();
+      console.log('Provinces seeded successfully!');
     }
   } catch (error) {
     console.error('Error seeding database:', error);

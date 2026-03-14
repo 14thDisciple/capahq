@@ -1,0 +1,135 @@
+import React, { useState, useEffect } from 'react';
+import { collection, onSnapshot, query, deleteDoc, doc, addDoc } from 'firebase/firestore';
+import { db } from '../../lib/firebase';
+import { Plus, Trash2, Loader2, Shield } from 'lucide-react';
+
+export default function AdminUsersManager() {
+  const [admins, setAdmins] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [newEmail, setNewEmail] = useState('');
+  const [adding, setAdding] = useState(false);
+
+  useEffect(() => {
+    const q = query(collection(db, 'admins'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const adminsData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setAdmins(adminsData);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const handleDelete = async (id: string) => {
+    if (window.confirm('Are you sure you want to remove this admin?')) {
+      try {
+        await deleteDoc(doc(db, 'admins', id));
+      } catch (error) {
+        console.error('Error deleting admin: ', error);
+        alert('Failed to remove admin.');
+      }
+    }
+  };
+
+  const handleAdd = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newEmail.trim() || !newEmail.includes('@')) {
+      alert('Please enter a valid email address.');
+      return;
+    }
+
+    setAdding(true);
+    try {
+      await addDoc(collection(db, 'admins'), {
+        email: newEmail.trim().toLowerCase(),
+        createdAt: new Date().toISOString()
+      });
+      setNewEmail('');
+    } catch (error) {
+      console.error('Error adding admin:', error);
+      alert('Failed to add admin.');
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  if (loading) return <div className="flex justify-center py-10"><Loader2 className="w-8 h-8 animate-spin text-blue-600" /></div>;
+
+  return (
+    <div>
+      <div className="mb-8">
+        <h2 className="text-2xl font-bold text-slate-900 mb-2">Manage Admin Users</h2>
+        <p className="text-slate-600">Add or remove users who can access the admin dashboard.</p>
+      </div>
+
+      <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 mb-8">
+        <h3 className="text-lg font-semibold text-slate-900 mb-4">Add New Admin</h3>
+        <form onSubmit={handleAdd} className="flex gap-4">
+          <input
+            type="email"
+            value={newEmail}
+            onChange={(e) => setNewEmail(e.target.value)}
+            placeholder="Enter Google email address"
+            className="flex-1 px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            required
+          />
+          <button
+            type="submit"
+            disabled={adding}
+            className="flex items-center px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+          >
+            {adding ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
+            Add Admin
+          </button>
+        </form>
+      </div>
+
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <table className="min-w-full divide-y divide-slate-200">
+          <thead className="bg-slate-50">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Email Address</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Added On</th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-slate-200">
+            {/* Hardcoded super admin */}
+            <tr>
+              <td className="px-6 py-4 whitespace-nowrap">
+                <div className="flex items-center">
+                  <Shield className="w-4 h-4 text-blue-600 mr-2" />
+                  <span className="text-sm font-medium text-slate-900">youroger1@gmail.com</span>
+                  <span className="ml-2 px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">Super Admin</span>
+                </div>
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">System Default</td>
+              <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                <span className="text-slate-400 cursor-not-allowed">Cannot Remove</span>
+              </td>
+            </tr>
+            {admins.map((admin) => (
+              <tr key={admin.id}>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">{admin.email}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                  {new Date(admin.createdAt).toLocaleDateString()}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <button
+                    onClick={() => handleDelete(admin.id)}
+                    className="text-red-600 hover:text-red-900 transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4 inline" /> Remove
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}

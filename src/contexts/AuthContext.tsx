@@ -1,9 +1,11 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
-import { auth } from '../lib/firebase';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { auth, db } from '../lib/firebase';
 
 interface AuthContextType {
   user: User | null;
+  isAdmin: boolean;
   loading: boolean;
   signInWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
@@ -11,6 +13,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
+  isAdmin: false,
   loading: true,
   signInWithGoogle: async () => {},
   logout: async () => {},
@@ -22,11 +25,29 @@ export function useAuth() {
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      setUser(currentUser);
+      if (currentUser && currentUser.email) {
+        // Check if user is admin
+        if (currentUser.email === 'youroger1@gmail.com') {
+          setIsAdmin(true);
+        } else {
+          try {
+            const q = query(collection(db, 'admins'), where('email', '==', currentUser.email));
+            const querySnapshot = await getDocs(q);
+            setIsAdmin(!querySnapshot.empty);
+          } catch (error) {
+            console.error("Error checking admin status:", error);
+            setIsAdmin(false);
+          }
+        }
+      } else {
+        setIsAdmin(false);
+      }
       setLoading(false);
     });
 
@@ -53,7 +74,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signInWithGoogle, logout }}>
+    <AuthContext.Provider value={{ user, isAdmin, loading, signInWithGoogle, logout }}>
       {!loading && children}
     </AuthContext.Provider>
   );

@@ -1,65 +1,36 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import useEmblaCarousel from 'embla-carousel-react';
 import Autoplay from 'embla-carousel-autoplay';
 import { ExternalLink } from 'lucide-react';
-
-const partners = [
-  {
-    name: 'The Karibu Foundation',
-    description: 'RESISTING AND REBUILDING',
-    logo: 'https://logo.clearbit.com/karibu.no',
-    link: 'https://www.karibu.no/',
-  },
-  {
-    name: 'African Council of Religious Leaders',
-    description: 'ACRL-RfP | Religions for Peace',
-    logo: 'https://logo.clearbit.com/acrl-rfp.org',
-    link: 'https://acrl-rfp.org/',
-  },
-  {
-    name: 'Faith to Action Network',
-    description: 'Promoting family health and well-being',
-    logo: 'https://logo.clearbit.com/faithtoactionetwork.org',
-    link: 'https://www.faithtoactionetwork.org/',
-  },
-  {
-    name: 'All Africa Conference of Churches',
-    description: 'AACC',
-    logo: 'https://logo.clearbit.com/aacc-ceta.org',
-    link: 'https://aacc-ceta.org/',
-  },
-  {
-    name: 'The Episcopal Church',
-    description: 'Global Anglican Communion',
-    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Episcopal_Church_shield.svg/512px-Episcopal_Church_shield.svg.png',
-    link: 'https://www.episcopalchurch.org/',
-  },
-  {
-    name: 'The St. Augustine Foundation',
-    description: 'Supporting theological education',
-    logo: 'https://logo.clearbit.com/staugustinesfoundation.org',
-    link: 'https://staugustinesfoundation.org/',
-  },
-  {
-    name: 'The Anglican Church of Canada',
-    description: 'Partner in mission',
-    logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/3/3b/Anglican_Church_of_Canada_logo.svg/512px-Anglican_Church_of_Canada_logo.svg.png',
-    link: 'https://www.anglican.ca/',
-  },
-  {
-    name: 'The Scottish Episcopal Church',
-    description: 'Evangelical Truth and Apostolic Order',
-    logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/8/8e/Scottish_Episcopal_Church_logo.svg/512px-Scottish_Episcopal_Church_logo.svg.png',
-    link: 'https://www.scotland.anglican.org/',
-  }
-];
+import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { db } from '../lib/firebase';
 
 export default function Partners() {
+  const [partners, setPartners] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
   const [emblaRef] = useEmblaCarousel(
     { loop: true, align: 'start', skipSnaps: false },
     [Autoplay({ delay: 3000, stopOnInteraction: true })]
   );
+
+  useEffect(() => {
+    const q = query(collection(db, 'partners'), orderBy('createdAt', 'desc'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const partnersData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setPartners(partnersData);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  if (loading) return null;
+  if (partners.length === 0) return null;
 
   return (
     <section className="py-24 bg-white border-t border-slate-200 overflow-hidden">
@@ -83,26 +54,26 @@ export default function Partners() {
             <div className="flex -ml-4 touch-pan-y py-4">
               {partners.map((partner, index) => (
                 <div 
-                  key={partner.name}
+                  key={partner.id}
                   className="flex-[0_0_100%] min-w-0 sm:flex-[0_0_50%] lg:flex-[0_0_33.333%] xl:flex-[0_0_25%] pl-4"
                 >
                   <motion.a
-                    href={partner.link}
+                    href={partner.websiteUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ delay: index * 0.1 }}
-                    className="block h-full bg-slate-50 rounded-2xl p-8 text-center border border-slate-100 hover:border-blue-300 hover:bg-blue-50/50 hover:shadow-xl transition-all duration-300 group relative flex flex-col items-center"
+                    className="block h-full bg-slate-50 rounded-2xl p-8 text-center border border-slate-100 hover:border-blue-300 hover:bg-white hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group relative flex flex-col items-center"
                   >
-                    <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                      <ExternalLink className="w-5 h-5 text-blue-500" />
+                    <div className="absolute top-4 right-4 text-slate-300 group-hover:text-blue-500 transition-colors duration-300">
+                      <ExternalLink className="w-5 h-5" />
                     </div>
                     
-                    <div className="w-28 h-28 mx-auto bg-white rounded-2xl flex items-center justify-center mb-6 shadow-sm group-hover:scale-110 transition-transform duration-500 overflow-hidden border border-slate-100 p-3">
+                    <div className="w-28 h-28 mx-auto bg-white rounded-2xl flex items-center justify-center mb-6 shadow-sm group-hover:scale-110 group-hover:shadow-md transition-all duration-500 overflow-hidden border border-slate-100 p-3">
                       <img 
-                        src={partner.logo} 
+                        src={partner.logoUrl} 
                         alt={`${partner.name} logo`} 
                         className="w-full h-full object-contain mix-blend-multiply"
                         onError={(e) => {
@@ -111,8 +82,17 @@ export default function Partners() {
                         }}
                       />
                     </div>
-                    <h3 className="text-lg font-bold text-slate-900 mb-3 group-hover:text-blue-700 transition-colors line-clamp-2">{partner.name}</h3>
-                    <p className="text-sm text-slate-500 leading-relaxed line-clamp-3">{partner.description}</p>
+                    <h3 className="text-lg font-bold text-slate-900 mb-2 group-hover:text-blue-700 transition-colors line-clamp-2">{partner.name}</h3>
+                    
+                    {partner.description && (
+                      <p className="text-sm text-slate-500 line-clamp-3 mb-4">{partner.description}</p>
+                    )}
+                    
+                    <div className="mt-auto pt-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <span className="inline-flex items-center text-sm font-semibold text-blue-600">
+                        Visit Website <ExternalLink className="w-4 h-4 ml-1" />
+                      </span>
+                    </div>
                   </motion.a>
                 </div>
               ))}

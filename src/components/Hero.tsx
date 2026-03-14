@@ -40,11 +40,29 @@ export default function Hero() {
   const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % slides.length);
   const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
 
-  if (loading || slides.length === 0) {
+  if (loading) {
     return (
       <section className="relative overflow-hidden bg-slate-900 h-[650px] sm:h-[700px] lg:h-[800px] flex items-center justify-center pt-20">
         <div className="animate-pulse flex flex-col items-center">
           <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      </section>
+    );
+  }
+
+  if (slides.length === 0) {
+    return (
+      <section className="relative overflow-hidden bg-slate-900 h-[650px] sm:h-[700px] lg:h-[800px] flex items-center pt-20">
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/60 to-transparent" />
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+          <div className="max-w-3xl">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-white mb-6 leading-tight">
+              Welcome to CAPA
+            </h1>
+            <p className="text-lg sm:text-xl text-slate-300 mb-10 max-w-2xl leading-relaxed">
+              Council of Anglican Provinces of Africa
+            </p>
+          </div>
         </div>
       </section>
     );
@@ -117,7 +135,7 @@ export default function Hero() {
         <div className="absolute bottom-8 left-0 right-0 flex justify-center items-center gap-4 z-20">
           <button 
             onClick={prevSlide}
-            className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm transition-colors focus:outline-none focus:ring-2 focus:ring-white/50"
+            className="p-2 rounded-full bg-white/10 hover:bg-white/30 hover:scale-110 text-white backdrop-blur-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-white/50 shadow-lg"
             aria-label="Previous slide"
           >
             <ChevronLeft className="w-5 h-5" />
@@ -127,8 +145,8 @@ export default function Hero() {
               <button
                 key={index}
                 onClick={() => setCurrentSlide(index)}
-                className={`w-2.5 h-2.5 rounded-full transition-all focus:outline-none focus:ring-2 focus:ring-white/50 ${
-                  index === currentSlide ? 'bg-blue-500 w-8' : 'bg-white/50 hover:bg-white/80'
+                className={`h-2.5 rounded-full transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-white/50 ${
+                  index === currentSlide ? 'bg-blue-500 w-8 shadow-[0_0_10px_rgba(59,130,246,0.5)]' : 'bg-white/50 w-2.5 hover:bg-white hover:scale-125 hover:shadow-[0_0_8px_rgba(255,255,255,0.5)]'
                 }`}
                 aria-label={`Go to slide ${index + 1}`}
               />
@@ -136,7 +154,7 @@ export default function Hero() {
           </div>
           <button 
             onClick={nextSlide}
-            className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm transition-colors focus:outline-none focus:ring-2 focus:ring-white/50"
+            className="p-2 rounded-full bg-white/10 hover:bg-white/30 hover:scale-110 text-white backdrop-blur-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-white/50 shadow-lg"
             aria-label="Next slide"
           >
             <ChevronRight className="w-5 h-5" />

@@ -2,6 +2,8 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { FileText, Download, BookOpen, ExternalLink, FileDown, Search, Filter, ArrowUpDown, Tag, Info, X, ChevronRight, ChevronLeft, LayoutGrid, Eye, Share2, ChevronDown, Sparkles, Loader2 } from 'lucide-react';
 import { GoogleGenAI } from "@google/genai";
+import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { db } from '../lib/firebase';
 
 function FilterDropdown({ icon: Icon, value, options, onChange }: { icon: any, value: string, options: {value: string, label: string}[], onChange: (val: string) => void }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -25,13 +27,13 @@ function FilterDropdown({ icon: Icon, value, options, onChange }: { icon: any, v
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between pl-9 pr-4 py-2.5 text-sm border-slate-200 rounded-xl bg-slate-50 border font-medium text-slate-700 hover:border-blue-300 hover:shadow-sm transition-all text-left"
+        className="w-full flex items-center justify-between pl-9 pr-4 py-2.5 text-sm border-slate-200 rounded-xl bg-slate-50 border font-medium text-slate-700 hover:border-blue-300 hover:bg-blue-50/50 hover:text-blue-700 hover:shadow-sm transition-all text-left group"
       >
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-          <Icon className="h-4 w-4 text-blue-500" />
+          <Icon className="h-4 w-4 text-blue-500 group-hover:text-blue-600 transition-colors" />
         </div>
         <span className="truncate block">{selectedOption.label}</span>
-        <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+        <ChevronDown className={`h-4 w-4 text-slate-400 group-hover:text-blue-500 transition-all duration-200 ${isOpen ? 'rotate-180 text-blue-500' : ''}`} />
       </motion.button>
       <AnimatePresence>
         {isOpen && (
@@ -63,6 +65,8 @@ function FilterDropdown({ icon: Icon, value, options, onChange }: { icon: any, v
 }
 
 export default function Resources() {
+  const [resources, setResources] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('All');
   const [sortBy, setSortBy] = useState('relevance');
@@ -75,6 +79,21 @@ export default function Resources() {
   const [showGenerator, setShowGenerator] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
+
+  useEffect(() => {
+    const q = query(collection(db, 'resources'), orderBy('createdAt', 'desc'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const resourcesData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        icon: FileText // Default icon, you can map based on type if needed
+      }));
+      setResources(resourcesData);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const handleGenerateImage = async () => {
     setIsGenerating(true);
@@ -114,84 +133,9 @@ export default function Resources() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 4;
 
-  const resources = [
-    {
-      title: 'CAPA Prayer Cycle',
-      description: 'A comprehensive guide for daily prayers across the Anglican Communion in Africa.',
-      type: 'PDF Document',
-      category: 'Liturgy & Worship',
-      icon: BookOpen,
-      size: '2.4 MB',
-      date: '2023-01-15',
-      tags: ['Prayer', 'Worship', 'Daily'],
-      featured: true,
-      url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
-    },
-    {
-      title: 'CCMP Implementation Toolkit',
-      description: 'Church and Community Mobilization Process monitoring and documentation guidelines.',
-      type: 'Toolkit',
-      category: 'Community Development',
-      icon: FileText,
-      size: '4.1 MB',
-      date: '2022-11-05',
-      tags: ['Community', 'Mobilization', 'Monitoring'],
-      featured: true,
-      url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
-    },
-    {
-      title: 'COVID-19 Response Guidelines',
-      description: 'Health and safety protocols and pastoral care guidelines during the pandemic.',
-      type: 'PDF Document',
-      category: 'Health & Relief',
-      icon: FileDown,
-      size: '1.8 MB',
-      date: '2020-04-12',
-      tags: ['Health', 'Safety', 'Pastoral Care'],
-      featured: false,
-      url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
-    },
-    {
-      title: 'Strategic Plan 2021-2025',
-      description: 'Our five-year roadmap for capacity building, peace, and holistic ministry.',
-      type: 'Publication',
-      category: 'Strategy & Policy',
-      icon: FileText,
-      size: '5.2 MB',
-      date: '2021-02-20',
-      tags: ['Strategy', 'Planning', 'Capacity Building'],
-      featured: true,
-      url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
-    },
-    {
-      title: 'Youth Leadership Manual',
-      description: 'Training materials for empowering young leaders in the Anglican Church.',
-      type: 'Toolkit',
-      category: 'Youth & Education',
-      icon: BookOpen,
-      size: '3.5 MB',
-      date: '2023-06-10',
-      tags: ['Youth', 'Leadership', 'Training'],
-      featured: false,
-      url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
-    },
-    {
-      title: 'Environmental Stewardship Report',
-      description: 'Annual report on climate justice initiatives and creation care across provinces.',
-      type: 'Publication',
-      category: 'Environment & Climate',
-      icon: FileText,
-      size: '6.0 MB',
-      date: '2024-01-05',
-      tags: ['Environment', 'Climate', 'Report'],
-      featured: false,
-      url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
-    }
-  ];
-
   const types = ['All', ...Array.from(new Set(resources.map(r => r.type)))];
   const categories = ['All', ...Array.from(new Set(resources.map(r => r.category)))];
-  const allTags = ['All', ...Array.from(new Set(resources.flatMap(r => r.tags)))].sort();
+  const allTags = ['All', ...Array.from(new Set(resources.flatMap(r => r.tags || [])))].sort();
   const featuredResources = resources.filter(r => r.featured);
 
   const tagOptions = allTags.map(tag => ({ value: tag, label: tag === 'All' ? 'All Tags' : tag }));
@@ -209,7 +153,7 @@ export default function Resources() {
     let score = 0;
     if (resource.title.toLowerCase() === q) score += 100;
     if (resource.title.toLowerCase().includes(q)) score += 50;
-    if (resource.tags.some((t: string) => t.toLowerCase().includes(q))) score += 30;
+    if ((resource.tags || []).some((t: string) => t.toLowerCase().includes(q))) score += 30;
     if (resource.category.toLowerCase().includes(q)) score += 20;
     if (resource.description.toLowerCase().includes(q)) score += 10;
     return score;
@@ -225,10 +169,10 @@ export default function Resources() {
       const matchesSearch = resource.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
                             resource.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
                             resource.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                            resource.tags.some(t => t.toLowerCase().includes(searchQuery.toLowerCase()));
+                            (resource.tags || []).some((t: string) => t.toLowerCase().includes(searchQuery.toLowerCase()));
       const matchesType = filterType === 'All' || resource.type === filterType;
       const matchesCategory = selectedCategory === 'All' || resource.category === selectedCategory;
-      const matchesTag = selectedTag === 'All' || resource.tags.includes(selectedTag);
+      const matchesTag = selectedTag === 'All' || (resource.tags || []).includes(selectedTag);
       return matchesSearch && matchesType && matchesCategory && matchesTag;
     });
 
@@ -238,9 +182,9 @@ export default function Resources() {
       } else if (sortBy === 'title') {
         return a.title.localeCompare(b.title);
       } else if (sortBy === 'date' || (sortBy === 'relevance' && !searchQuery)) {
-        return new Date(b.date).getTime() - new Date(a.date).getTime();
+        return new Date(b.date || b.createdAt).getTime() - new Date(a.date || a.createdAt).getTime();
       } else if (sortBy === 'size') {
-        return parseFloat(a.size) - parseFloat(b.size);
+        return parseFloat(a.size || '0') - parseFloat(b.size || '0');
       }
       return 0;
     });
@@ -271,6 +215,8 @@ export default function Resources() {
       alert('Link copied to clipboard!');
     }
   };
+
+  if (loading) return null;
 
   return (
     <section id="resources" className="py-24 bg-slate-50 border-t border-slate-200 relative overflow-hidden scroll-mt-20">
@@ -403,10 +349,10 @@ export default function Resources() {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => setSelectedCategory(cat)}
-                    className={`relative whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                    className={`relative whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 border ${
                       selectedCategory === cat 
-                        ? 'text-white' 
-                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
+                        ? 'text-white border-transparent shadow-sm' 
+                        : 'bg-slate-100 text-slate-600 border-transparent hover:bg-blue-50 hover:text-blue-700 hover:border-blue-100 hover:shadow-sm'
                     }`}
                   >
                     {selectedCategory === cat && (
@@ -590,7 +536,7 @@ export default function Resources() {
       <AnimatePresence>
         {selectedResource && (
           <div 
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-hidden"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
             onClick={() => setSelectedResource(null)}
           >
             <motion.div 
@@ -601,31 +547,31 @@ export default function Resources() {
               initial={{ opacity: 0, scale: 0.95, y: 20 }} 
               animate={{ opacity: 1, scale: 1, y: 0 }} 
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-2xl max-h-[90vh] sm:max-h-[85vh] flex flex-col bg-white rounded-3xl shadow-2xl overflow-hidden z-10"
+              className="relative w-full max-w-2xl max-h-[calc(100dvh-2rem)] sm:max-h-[calc(100dvh-3rem)] flex flex-col bg-white rounded-3xl shadow-2xl overflow-hidden z-10"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="p-4 sm:p-6 border-b border-slate-100 flex items-start justify-between flex-shrink-0">
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-4 min-w-0">
                   <div className="w-12 h-12 sm:w-16 sm:h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center flex-shrink-0">
                     <selectedResource.icon className="w-6 h-6 sm:w-8 sm:h-8" />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-[10px] sm:text-xs font-bold text-blue-600 uppercase tracking-wider">{selectedResource.category}</span>
+                      <span className="text-[10px] sm:text-xs font-bold text-blue-600 uppercase tracking-wider truncate">{selectedResource.category}</span>
                     </div>
-                    <h3 className="text-xl sm:text-2xl font-bold text-slate-900 line-clamp-2">{selectedResource.title}</h3>
+                    <h3 className="text-xl sm:text-2xl font-bold text-slate-900 line-clamp-2 break-words">{selectedResource.title}</h3>
                   </div>
                 </div>
                 <button 
                   onClick={() => setSelectedResource(null)}
-                  className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors flex-shrink-0"
+                  className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors flex-shrink-0 ml-4"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
               
               <div className="p-4 sm:p-6 bg-slate-50/50 overflow-y-auto flex-1 min-h-0 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-slate-400">
-                <p className="text-slate-600 text-base sm:text-lg leading-relaxed mb-6">
+                <p className="text-slate-600 text-base sm:text-lg leading-relaxed mb-6 break-words">
                   {selectedResource.description}
                 </p>
                 
@@ -717,7 +663,7 @@ export default function Resources() {
       <AnimatePresence>
         {showAbout && (
           <div 
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-hidden"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
             onClick={() => setShowAbout(false)}
           >
             <motion.div 
@@ -728,7 +674,7 @@ export default function Resources() {
               initial={{ opacity: 0, scale: 0.95, y: 20 }} 
               animate={{ opacity: 1, scale: 1, y: 0 }} 
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-2xl max-h-[90vh] sm:max-h-[85vh] flex flex-col bg-white rounded-3xl shadow-2xl overflow-hidden z-10"
+              className="relative w-full max-w-2xl max-h-[calc(100dvh-2rem)] sm:max-h-[calc(100dvh-3rem)] flex flex-col bg-white rounded-3xl shadow-2xl overflow-hidden z-10"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="px-4 sm:px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 flex-shrink-0">
@@ -793,7 +739,7 @@ export default function Resources() {
       <AnimatePresence>
         {showGenerator && (
           <div 
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-hidden"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
             onClick={() => setShowGenerator(false)}
           >
             <motion.div 
@@ -804,7 +750,7 @@ export default function Resources() {
               initial={{ opacity: 0, scale: 0.95, y: 20 }} 
               animate={{ opacity: 1, scale: 1, y: 0 }} 
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-2xl max-h-[90vh] flex flex-col bg-white rounded-3xl shadow-2xl overflow-hidden z-10"
+              className="relative w-full max-w-2xl max-h-[calc(100dvh-2rem)] sm:max-h-[calc(100dvh-3rem)] flex flex-col bg-white rounded-3xl shadow-2xl overflow-hidden z-10"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="px-4 sm:px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 flex-shrink-0">

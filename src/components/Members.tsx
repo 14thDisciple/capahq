@@ -1,29 +1,32 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { MapPin, X } from 'lucide-react';
-import { ComposableMap, Geographies, Geography, Marker } from 'react-simple-maps';
+import { ComposableMap, Geographies, Geography, Marker, ZoomableGroup } from 'react-simple-maps';
+import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { db } from '../lib/firebase';
 
 const geoUrl = "https://unpkg.com/world-atlas@2.0.2/countries-110m.json";
 
-const provinces = [
-  { name: 'Alexandria', coordinates: [29.9187, 31.2001], description: 'Serving Egypt, North Africa, and the Horn of Africa.' },
-  { name: 'Burundi', coordinates: [29.9189, -3.3731], description: 'The Anglican Church of Burundi.' },
-  { name: 'Central Africa', coordinates: [20.9394, 6.6111], description: 'Province of the Anglican Church of the Congo.' },
-  { name: 'Congo', coordinates: [15.2663, -4.4419], description: 'Province de L\'Eglise Anglicane Du Congo.' },
-  { name: 'Kenya', coordinates: [37.9062, -0.0236], description: 'The Anglican Church of Kenya.' },
-  { name: 'Nigeria', coordinates: [8.6753, 9.0820], description: 'The Church of Nigeria (Anglican Communion).' },
-  { name: 'Rwanda', coordinates: [29.8739, -1.9403], description: 'Province de L\'Eglise Anglicane au Rwanda.' },
-  { name: 'Tanzania', coordinates: [34.8888, -6.3690], description: 'The Anglican Church of Tanzania.' },
-  { name: 'Sudan', coordinates: [30.2176, 12.8628], description: 'Province of the Episcopal Church of Sudan.' },
-  { name: 'South Sudan', coordinates: [31.3070, 6.8770], description: 'Province of the Episcopal Church of South Sudan.' },
-  { name: 'Indian Ocean', coordinates: [46.8691, -18.7669], description: 'Church of the Province of the Indian Ocean.' },
-  { name: 'South Africa', coordinates: [22.9375, -30.5595], description: 'Anglican Church of Southern Africa.' },
-  { name: 'Uganda', coordinates: [32.2903, 1.3733], description: 'The Church of the Province of Uganda.' },
-  { name: 'West Africa', coordinates: [-0.1870, 5.6037], description: 'Church of the Province of West Africa.' }
-];
-
 export default function Members() {
-  const [selectedProvince, setSelectedProvince] = useState<typeof provinces[0] | null>(null);
+  const [provinces, setProvinces] = useState<any[]>([]);
+  const [selectedProvince, setSelectedProvince] = useState<any | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const q = query(collection(db, 'provinces'), orderBy('name', 'asc'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const provincesData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setProvinces(provincesData);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  if (loading) return null;
 
   return (
     <section id="members" className="py-24 bg-slate-50 border-t border-slate-100 relative overflow-hidden scroll-mt-20">
@@ -49,49 +52,51 @@ export default function Members() {
               }}
               style={{ width: "100%", height: "auto", maxHeight: "600px" }}
             >
-              <Geographies geography={geoUrl}>
-                {({ geographies }) =>
-                  geographies.map((geo) => (
-                    <Geography
-                      key={geo.rsmKey}
-                      geography={geo}
-                      fill="#f1f5f9"
-                      stroke="#cbd5e1"
-                      strokeWidth={0.5}
-                      style={{
-                        default: { outline: "none" },
-                        hover: { fill: "#e2e8f0", outline: "none" },
-                        pressed: { outline: "none" },
-                      }}
-                    />
-                  ))
-                }
-              </Geographies>
-              
-              {provinces.map((province) => (
-                <Marker 
-                  key={province.name} 
-                  coordinates={province.coordinates as [number, number]}
-                  onClick={() => setSelectedProvince(province)}
-                  className="cursor-pointer group"
-                >
-                  <circle 
-                    r={6} 
-                    fill={selectedProvince?.name === province.name ? "#2563eb" : "#ef4444"} 
-                    stroke="#fff" 
-                    strokeWidth={2} 
-                    className="transition-colors duration-300 group-hover:fill-blue-600"
-                  />
-                  <text
-                    textAnchor="middle"
-                    y={-12}
-                    style={{ fontFamily: "Inter, sans-serif", fill: "#475569", fontSize: "10px", fontWeight: 600 }}
-                    className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+              <ZoomableGroup center={[20, 2]} zoom={1} minZoom={1} maxZoom={5}>
+                <Geographies geography={geoUrl}>
+                  {({ geographies }) =>
+                    geographies.map((geo) => (
+                      <Geography
+                        key={geo.rsmKey}
+                        geography={geo}
+                        fill="#f1f5f9"
+                        stroke="#cbd5e1"
+                        strokeWidth={0.5}
+                        style={{
+                          default: { outline: "none" },
+                          hover: { fill: "#e2e8f0", outline: "none" },
+                          pressed: { outline: "none" },
+                        }}
+                      />
+                    ))
+                  }
+                </Geographies>
+                
+                {provinces.map((province) => (
+                  <Marker 
+                    key={province.id} 
+                    coordinates={[province.longitude, province.latitude]}
+                    onClick={() => setSelectedProvince(province)}
+                    className="cursor-pointer group"
                   >
-                    {province.name}
-                  </text>
-                </Marker>
-              ))}
+                    <circle 
+                      r={6} 
+                      fill={selectedProvince?.id === province.id ? "#2563eb" : "#ef4444"} 
+                      stroke="#fff" 
+                      strokeWidth={2} 
+                      className="transition-colors duration-300 group-hover:fill-blue-600"
+                    />
+                    <text
+                      textAnchor="middle"
+                      y={-12}
+                      style={{ fontFamily: "Inter, sans-serif", fill: "#475569", fontSize: "10px", fontWeight: 600 }}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+                    >
+                      {province.name}
+                    </text>
+                  </Marker>
+                ))}
+              </ZoomableGroup>
             </ComposableMap>
           </div>
 
@@ -119,6 +124,9 @@ export default function Members() {
                   <p className="text-slate-600 leading-relaxed mb-6">
                     {selectedProvince.description}
                   </p>
+                  <div className="text-sm text-slate-500 mb-6">
+                    <strong>Countries Covered:</strong> {selectedProvince.countries}
+                  </div>
                   <button className="w-full py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors">
                     View Province Details
                   </button>
@@ -141,7 +149,7 @@ export default function Members() {
                   <div className="grid grid-cols-2 gap-2 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
                     {provinces.map((province) => (
                       <button
-                        key={province.name}
+                        key={province.id}
                         onClick={() => setSelectedProvince(province)}
                         className="text-left px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-700 transition-colors border border-transparent hover:border-blue-100"
                       >

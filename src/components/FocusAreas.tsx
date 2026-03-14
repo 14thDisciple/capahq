@@ -1,52 +1,39 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Shield, TrendingUp, Users, Leaf, Navigation, X } from 'lucide-react';
+import { Shield, TrendingUp, Users, Leaf, Navigation, X, Globe } from 'lucide-react';
+import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { db } from '../lib/firebase';
+
+const iconMap: Record<string, any> = {
+  'Shield': Shield,
+  'TrendingUp': TrendingUp,
+  'Users': Users,
+  'Leaf': Leaf,
+  'Navigation': Navigation,
+  'Globe': Globe,
+};
 
 export default function FocusAreas() {
-  const [selectedArea, setSelectedArea] = useState<typeof areas[0] | null>(null);
+  const [areas, setAreas] = useState<any[]>([]);
+  const [selectedArea, setSelectedArea] = useState<any | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const areas = [
-    {
-      title: 'Peace and Nation Building',
-      description: 'Fostering reconciliation, conflict resolution, and active participation in national development across the continent.',
-      fullDescription: 'Our Peace and Nation Building initiative focuses on healing communities torn apart by conflict. We train local leaders in mediation, support grassroots reconciliation efforts, and advocate for policies that promote social cohesion and justice. By empowering individuals to become peacemakers, we aim to build resilient societies where every citizen can thrive in safety and harmony.',
-      icon: Shield,
-      color: 'text-blue-600',
-      bg: 'bg-blue-50',
-    },
-    {
-      title: 'Economic Empowerment',
-      description: 'Promoting sustainable livelihoods, entrepreneurship, and economic resilience within communities.',
-      fullDescription: 'Economic Empowerment is central to our mission of lifting communities out of poverty. We provide micro-grants, vocational training, and mentorship to aspiring entrepreneurs, with a special focus on women and youth. Our programs are designed to create sustainable income streams, improve financial literacy, and foster economic independence, enabling families to build a better future.',
-      icon: TrendingUp,
-      color: 'text-emerald-600',
-      bg: 'bg-emerald-50',
-    },
-    {
-      title: 'Church Life & Interfaith Relations',
-      description: 'Strengthening Anglican identity while building bridges of understanding with other faiths.',
-      fullDescription: 'We believe that faith should be a unifying force, not a source of division. Our Church Life & Interfaith Relations program works to deepen the spiritual life of our congregations while actively engaging in dialogue and collaborative projects with other religious communities. Through shared initiatives, we promote mutual respect, combat religious extremism, and work together for the common good.',
-      icon: Users,
-      color: 'text-purple-600',
-      bg: 'bg-purple-50',
-    },
-    {
-      title: 'Environmental Stewardship',
-      description: 'Advocating for creation care, climate justice, and food security in vulnerable regions.',
-      fullDescription: 'Recognizing the urgent threat of climate change, our Environmental Stewardship program advocates for sustainable practices and policies. We work with communities to implement climate-smart agriculture, promote reforestation, and improve access to clean water. By educating and mobilizing local populations, we strive to protect our natural resources and ensure food security for future generations.',
-      icon: Leaf,
-      color: 'text-green-600',
-      bg: 'bg-green-50',
-    },
-    {
-      title: 'Safe Migration & Human Trafficking',
-      description: 'Addressing emerging issues, protecting the vulnerable, and advocating for safe movement.',
-      fullDescription: 'The crisis of unsafe migration and human trafficking requires a coordinated and compassionate response. We provide support and sanctuary for victims, raise awareness about the dangers of irregular migration, and advocate for the rights of migrants and refugees. Our goal is to address the root causes of forced displacement and ensure that all people can move safely and with dignity.',
-      icon: Navigation,
-      color: 'text-rose-600',
-      bg: 'bg-rose-50',
-    },
-  ];
+  useEffect(() => {
+    const q = query(collection(db, 'thematicAreas'), orderBy('order', 'asc'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const areasData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setAreas(areasData);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  if (loading) return null;
+  if (areas.length === 0) return null;
 
   return (
     <section id="work" className="py-24 bg-slate-50 border-t border-slate-100 scroll-mt-20">
@@ -62,31 +49,34 @@ export default function FocusAreas() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {areas.map((area, index) => (
-            <motion.div
-              key={area.title}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: index * 0.1 }}
-              className="group relative bg-white p-8 rounded-2xl shadow-sm border border-slate-100 hover:shadow-xl hover:border-blue-100 transition-all duration-300 flex flex-col"
-            >
-              <div className={`inline-flex items-center justify-center p-4 rounded-xl ${area.bg} mb-6 group-hover:scale-110 transition-transform duration-300 self-start`}>
-                <area.icon className={`h-8 w-8 ${area.color}`} />
-              </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-3">{area.title}</h3>
-              <p className="text-slate-600 leading-relaxed mb-6 flex-grow">{area.description}</p>
-              <button 
-                onClick={() => setSelectedArea(area)}
-                className="inline-flex items-center text-sm font-semibold text-blue-600 hover:text-blue-700 self-start mt-auto"
+          {areas.map((area, index) => {
+            const IconComponent = iconMap[area.iconName] || Globe;
+            return (
+              <motion.div
+                key={area.id}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1 }}
+                className="group relative bg-white p-8 rounded-2xl shadow-sm border border-slate-100 hover:shadow-xl hover:border-blue-100 transition-all duration-300 flex flex-col"
               >
-                Learn more
-                <svg className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
-            </motion.div>
-          ))}
+                <div className={`inline-flex items-center justify-center p-4 rounded-xl bg-blue-50 mb-6 group-hover:scale-110 transition-transform duration-300 self-start`}>
+                  <IconComponent className={`h-8 w-8 text-blue-600`} />
+                </div>
+                <h3 className="text-xl font-bold text-slate-900 mb-3">{area.title}</h3>
+                <p className="text-slate-600 leading-relaxed mb-6 flex-grow">{area.description}</p>
+                <button 
+                  onClick={() => setSelectedArea(area)}
+                  className="inline-flex items-center text-sm font-semibold text-blue-600 hover:text-blue-700 self-start mt-auto"
+                >
+                  Learn more
+                  <svg className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </motion.div>
+            );
+          })}
         </div>
       </div>
 
@@ -110,8 +100,8 @@ export default function FocusAreas() {
             >
               <div className="p-4 sm:p-6 border-b border-slate-100 flex items-start justify-between flex-shrink-0">
                 <div className="flex items-center gap-4">
-                  <div className={`w-12 h-12 sm:w-16 sm:h-16 ${selectedArea.bg} ${selectedArea.color} rounded-2xl flex items-center justify-center flex-shrink-0`}>
-                    <selectedArea.icon className="w-6 h-6 sm:w-8 sm:h-8" />
+                  <div className={`w-12 h-12 sm:w-16 sm:h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center flex-shrink-0`}>
+                    {React.createElement(iconMap[selectedArea.iconName] || Globe, { className: "w-6 h-6 sm:w-8 sm:h-8" })}
                   </div>
                   <div>
                     <h3 className="text-xl sm:text-2xl font-bold text-slate-900">{selectedArea.title}</h3>
@@ -126,8 +116,8 @@ export default function FocusAreas() {
               </div>
               
               <div className="p-4 sm:p-6 sm:p-8 overflow-y-auto flex-1 min-h-0 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-slate-400">
-                <p className="text-slate-700 text-base sm:text-lg leading-relaxed">
-                  {selectedArea.fullDescription}
+                <p className="text-slate-700 text-base sm:text-lg leading-relaxed whitespace-pre-wrap">
+                  {selectedArea.fullDescription || selectedArea.description}
                 </p>
               </div>
               

@@ -1,41 +1,82 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Menu, X, ChevronDown, Globe, ExternalLink } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../lib/firebase';
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [logoError, setLogoError] = useState(false);
+  const [logoUrl, setLogoUrl] = useState<string>('/capa-logo.png');
+
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchLogo = async () => {
+      try {
+        const docRef = doc(db, 'settings', 'global');
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists() && docSnap.data().logoUrl) {
+          setLogoUrl(docSnap.data().logoUrl);
+        }
+      } catch (error) {
+        console.error('Error fetching logo:', error);
+      }
+    };
+    fetchLogo();
+  }, []);
 
   const navLinks = [
-    { name: 'Home', href: '#' },
-    { name: 'Who We Are', href: '#about' },
-    { name: 'Our Work', href: '#work' },
-    { name: 'Members', href: '#members' },
+    { name: 'Home', href: '/' },
+    { name: 'Who We Are', href: '/#about' },
+    { name: 'Our Work', href: '/#work' },
+    { name: 'Members', href: '/#members' },
     { 
       name: 'Resources', 
-      href: '#resources',
+      href: '/#resources',
       dropdown: [
-        { name: 'Anglican Communion', url: 'https://www.anglicancommunion.org/' },
-        { name: 'Anglican Alliance', url: 'https://anglicanalliance.org/' },
-        { name: 'All Africa Conference of Churches', url: 'https://aacc-ceta.org/' },
-        { name: 'World Council of Churches', url: 'https://www.oikoumene.org/' },
-        { name: 'Compass Rose Society', url: 'https://www.compassrosesociety.org/' },
-        { name: 'Lambeth Conference', url: 'https://www.lambethconference.org/' }
+        { name: 'External Partners', url: '/external-partners', isInternal: true }
       ]
     },
-    { name: 'Communications', href: '#news' },
+    { name: 'Communications', href: '/#news' },
   ];
+
+  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    if (href.startsWith('/#')) {
+      e.preventDefault();
+      if (location.pathname === '/' && location.hash === href.substring(1)) {
+        const id = href.substring(2);
+        const element = document.getElementById(id);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth' });
+        }
+      } else {
+        navigate(href);
+      }
+      setIsOpen(false);
+    } else if (href === '/') {
+      e.preventDefault();
+      if (location.pathname === '/') {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        navigate('/');
+      }
+      setIsOpen(false);
+    }
+  };
 
   return (
     <nav className="fixed w-full bg-white/95 backdrop-blur-sm z-50 shadow-sm border-b border-slate-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-20">
           <div className="flex items-center">
-            <a href="#" className="flex items-center gap-2">
+            <Link to="/" className="flex items-center gap-2">
               {!logoError ? (
                 <img 
-                  src="/capa-logo.png" 
+                  src={logoUrl} 
                   alt="CAPA Logo" 
                   className="h-12 w-auto object-contain"
                   onError={() => setLogoError(true)}
@@ -47,7 +88,7 @@ export default function Navbar() {
                 <span className="font-bold text-xl leading-tight text-slate-900">CAPA</span>
                 <span className="text-[10px] font-medium text-slate-500 uppercase tracking-wider hidden sm:block">Council of Anglican Provinces of Africa</span>
               </div>
-            </a>
+            </Link>
           </div>
           
           <div className="hidden lg:flex items-center space-x-6">
@@ -60,6 +101,7 @@ export default function Navbar() {
               >
                 <a
                   href={link.href}
+                  onClick={(e) => handleNavClick(e, link.href)}
                   className="text-sm font-medium text-slate-600 hover:text-blue-700 transition-colors flex items-center gap-1 py-2 whitespace-nowrap"
                 >
                   {link.name}
@@ -80,16 +122,26 @@ export default function Navbar() {
                         <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">External Partners</span>
                       </div>
                       {link.dropdown.map((item, idx) => (
-                        <a
-                          key={idx}
-                          href={item.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center justify-between px-4 py-2.5 text-sm text-slate-600 hover:text-blue-700 hover:bg-blue-50 transition-colors"
-                        >
-                          <span className="truncate pr-2">{item.name}</span>
-                          <ExternalLink className="h-3.5 w-3.5 flex-shrink-0 opacity-50" />
-                        </a>
+                        item.isInternal ? (
+                          <Link
+                            key={idx}
+                            to={item.url}
+                            className="flex items-center justify-between px-4 py-2.5 text-sm text-slate-600 hover:text-blue-700 hover:bg-blue-50 transition-colors"
+                          >
+                            <span className="truncate pr-2">{item.name}</span>
+                          </Link>
+                        ) : (
+                          <a
+                            key={idx}
+                            href={item.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-between px-4 py-2.5 text-sm text-slate-600 hover:text-blue-700 hover:bg-blue-50 transition-colors"
+                          >
+                            <span className="truncate pr-2">{item.name}</span>
+                            <ExternalLink className="h-3.5 w-3.5 flex-shrink-0 opacity-50" />
+                          </a>
+                        )
                       ))}
                     </motion.div>
                   )}
@@ -97,7 +149,8 @@ export default function Navbar() {
               </div>
             ))}
             <a
-              href="#donate"
+              href="/#donate"
+              onClick={(e) => handleNavClick(e, '/#donate')}
               className="inline-flex items-center justify-center px-5 py-2.5 border border-transparent text-sm font-medium rounded-full text-white bg-blue-700 hover:bg-blue-800 transition-colors shadow-sm whitespace-nowrap"
             >
               Donate
@@ -139,7 +192,7 @@ export default function Navbar() {
                     <a
                       href={link.href}
                       className="block px-3 py-3 rounded-xl text-base font-semibold text-slate-700 hover:text-blue-700 hover:bg-slate-50 transition-colors"
-                      onClick={() => setIsOpen(false)}
+                      onClick={(e) => handleNavClick(e, link.href)}
                     >
                       {link.name}
                     </a>
@@ -159,17 +212,28 @@ export default function Navbar() {
                             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">External Partners</span>
                           </div>
                           {link.dropdown.map((item, idx) => (
-                            <a
-                              key={idx}
-                              href={item.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center justify-between pl-4 pr-4 py-3 text-sm font-medium text-slate-600 hover:text-blue-700 hover:bg-blue-100/50 transition-colors rounded-lg mx-2"
-                              onClick={() => setIsOpen(false)}
-                            >
-                              <span className="truncate pr-2">{item.name}</span>
-                              <ExternalLink className="h-4 w-4 flex-shrink-0 opacity-40" />
-                            </a>
+                            item.isInternal ? (
+                              <Link
+                                key={idx}
+                                to={item.url}
+                                className="flex items-center justify-between pl-4 pr-4 py-3 text-sm font-medium text-slate-600 hover:text-blue-700 hover:bg-blue-100/50 transition-colors rounded-lg mx-2"
+                                onClick={() => setIsOpen(false)}
+                              >
+                                <span className="truncate pr-2">{item.name}</span>
+                              </Link>
+                            ) : (
+                              <a
+                                key={idx}
+                                href={item.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center justify-between pl-4 pr-4 py-3 text-sm font-medium text-slate-600 hover:text-blue-700 hover:bg-blue-100/50 transition-colors rounded-lg mx-2"
+                                onClick={() => setIsOpen(false)}
+                              >
+                                <span className="truncate pr-2">{item.name}</span>
+                                <ExternalLink className="h-4 w-4 flex-shrink-0 opacity-40" />
+                              </a>
+                            )
                           ))}
                         </div>
                       </motion.div>
@@ -179,9 +243,9 @@ export default function Navbar() {
               ))}
               <div className="pt-4 px-2">
                 <a
-                  href="#donate"
+                  href="/#donate"
                   className="flex items-center justify-center w-full px-5 py-3.5 border border-transparent text-base font-bold rounded-xl text-white bg-blue-700 hover:bg-blue-800 shadow-md shadow-blue-200 transition-all active:scale-[0.98]"
-                  onClick={() => setIsOpen(false)}
+                  onClick={(e) => handleNavClick(e, '/#donate')}
                 >
                   Donate to CAPA
                 </a>
