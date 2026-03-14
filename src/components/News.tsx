@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Calendar, ArrowRight, Sparkles, X, Loader2 } from 'lucide-react';
 import useEmblaCarousel from 'embla-carousel-react';
 import Autoplay from 'embla-carousel-autoplay';
-import { GoogleGenAI } from "@google/genai";
 import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { seedDatabase } from '../lib/seedData';
@@ -48,27 +47,25 @@ export default function News() {
     setIsGenerating(true);
     setGeneratedImage(null);
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
       const prompt = `A beautiful, inspiring, high-quality illustration representing the concept of "${selectedCategory}" in the context of African community development, hope, and faith.`;
       
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash-image',
-        contents: {
-          parts: [
-            { text: prompt }
-          ]
-        }
+      const response = await fetch('/api/generate-image', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ prompt })
       });
       
-      if (response.candidates && response.candidates[0].content.parts) {
-        for (const part of response.candidates[0].content.parts) {
-          if (part.inlineData) {
-            const base64EncodeString = part.inlineData.data;
-            const imageUrl = `data:image/png;base64,${base64EncodeString}`;
-            setGeneratedImage(imageUrl);
-            break;
-          }
-        }
+      if (!response.ok) {
+        throw new Error('Failed to generate image');
+      }
+      
+      const data = await response.json();
+      if (data.imageUrl) {
+        setGeneratedImage(data.imageUrl);
+      } else {
+        throw new Error('No image URL returned');
       }
     } catch (error) {
       console.error("Error generating image:", error);
