@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Globe, Mail, Phone, MapPin, Facebook, Twitter, Instagram, Send } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 
 export default function Footer() {
@@ -10,18 +10,23 @@ export default function Footer() {
   const [logoUrl, setLogoUrl] = useState<string>('/capa-logo.png');
 
   useEffect(() => {
-    const fetchLogo = async () => {
-      try {
-        const docRef = doc(db, 'settings', 'global');
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists() && docSnap.data().logoUrl) {
-          setLogoUrl(docSnap.data().logoUrl);
+    const docRef = doc(db, 'settings', 'global');
+    const unsubscribe = onSnapshot(docRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        if (data.logoUrl) {
+          setLogoUrl(data.logoUrl);
+          setLogoError(false);
+        } else {
+          setLogoUrl('/capa-logo.png');
+          setLogoError(false);
         }
-      } catch (error) {
-        console.error('Error fetching logo:', error);
       }
-    };
-    fetchLogo();
+    }, (error) => {
+      console.error('Error fetching logo:', error);
+    });
+
+    return () => unsubscribe();
   }, []);
 
   return (
