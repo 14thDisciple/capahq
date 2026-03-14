@@ -46,13 +46,37 @@ const initialNews = [
   },
 ];
 
+const initialHeroSlides = [
+  {
+    image: "https://picsum.photos/seed/africa-community/1920/1080?blur=2",
+    badge: "Instrument of Anglican Communion in Africa",
+    title: "To celebrate life and address challenges through the Anglican Church in Africa.",
+    description: "We provide holistic ministry to fulfill God's promise of abundant life, drawing all people into fellowship with complementary gifts, experiences, and skills.",
+    order: 0
+  },
+  {
+    image: "https://picsum.photos/seed/church-worship/1920/1080?blur=2",
+    badge: "Faith & Fellowship",
+    title: "Building Stronger Communities Through Faith and Action.",
+    description: "Empowering local parishes to serve their communities, fostering peace, and promoting sustainable development across the continent.",
+    order: 1
+  },
+  {
+    image: "https://picsum.photos/seed/african-youth/1920/1080?blur=2",
+    badge: "Youth & Future",
+    title: "Equipping the Next Generation of Leaders.",
+    description: "Investing in education, leadership training, and spiritual growth to ensure a vibrant future for the church and society.",
+    order: 2
+  }
+];
+
 export async function seedDatabase() {
   try {
     const newsRef = collection(db, 'news');
-    const snapshot = await getDocs(newsRef);
+    const newsSnapshot = await getDocs(newsRef);
     
     // Only seed if the collection is empty
-    if (snapshot.empty) {
+    if (newsSnapshot.empty) {
       console.log('Seeding database with initial news...');
       const batch = writeBatch(db);
       
@@ -66,7 +90,26 @@ export async function seedDatabase() {
       });
       
       await batch.commit();
-      console.log('Database seeded successfully!');
+      console.log('News seeded successfully!');
+    }
+
+    const heroRef = collection(db, 'hero_slides');
+    const heroSnapshot = await getDocs(heroRef);
+
+    if (heroSnapshot.empty) {
+      console.log('Seeding database with initial hero slides...');
+      const batch = writeBatch(db);
+      
+      initialHeroSlides.forEach((item) => {
+        const docRef = doc(heroRef);
+        batch.set(docRef, { 
+          ...item, 
+          createdAt: new Date().toISOString() 
+        });
+      });
+      
+      await batch.commit();
+      console.log('Hero slides seeded successfully!');
     }
   } catch (error) {
     console.error('Error seeding database:', error);

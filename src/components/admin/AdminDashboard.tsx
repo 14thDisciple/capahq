@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { LogOut, Plus, Edit, Trash2, LayoutDashboard, FileText } from 'lucide-react';
+import { LogOut, Plus, Edit, Trash2, LayoutDashboard, FileText, Image as ImageIcon } from 'lucide-react';
 import { collection, getDocs, deleteDoc, doc, onSnapshot, query, orderBy } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import NewsEditor from './NewsEditor';
+import CarouselManager from './CarouselManager';
 
 export default function AdminDashboard() {
   const { user, signInWithGoogle, logout } = useAuth();
@@ -43,6 +44,10 @@ export default function AdminDashboard() {
             <FileText className="w-5 h-5 mr-3" />
             Manage News
           </Link>
+          <Link to="/admin/carousel" className="flex items-center px-4 py-3 text-slate-700 hover:bg-slate-50 rounded-xl transition-colors">
+            <ImageIcon className="w-5 h-5 mr-3" />
+            Manage Carousel
+          </Link>
         </nav>
         <div className="p-4 border-t border-slate-200">
           <div className="flex items-center mb-4 px-4">
@@ -73,6 +78,7 @@ export default function AdminDashboard() {
             <Route path="/news" element={<NewsList />} />
             <Route path="/news/new" element={<NewsEditor />} />
             <Route path="/news/edit/:id" element={<NewsEditor />} />
+            <Route path="/carousel" element={<CarouselManager />} />
           </Routes>
         </div>
       </main>
