@@ -1,13 +1,15 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User, onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
-import { collection, query, where, getDocs } from 'firebase/firestore';
-import { auth, db } from '../lib/firebase';
+import { api } from '../lib/api';
+
+interface User {
+  email: string;
+}
 
 interface AuthContextType {
   user: User | null;
   isAdmin: boolean;
   loading: boolean;
-  signInWithGoogle: () => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -15,7 +17,7 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   isAdmin: false,
   loading: true,
-  signInWithGoogle: async () => {},
+  login: async () => {},
   logout: async () => {},
 });
 
@@ -29,52 +31,55 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      setUser(currentUser);
-      if (currentUser && currentUser.email) {
-        // Check if user is admin
-        if (currentUser.email === 'youroger1@gmail.com') {
-          setIsAdmin(true);
-        } else {
-          try {
-            const q = query(collection(db, 'admins'), where('email', '==', currentUser.email));
-            const querySnapshot = await getDocs(q);
-            setIsAdmin(!querySnapshot.empty);
-          } catch (error) {
-            console.error("Error checking admin status:", error);
-            setIsAdmin(false);
+    const checkAuth = async () => {
+      const token = localStorage.getItem('token');
+      if (token) {
+        try {
+          const res = await fetch('/api/auth/me', {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          if (res.ok) {
+            const data = await res.json();
+            setUser({ email: data.email });
+            setIsAdmin(true); // All logged in users are admins in this simple setup
+          } else {
+            localStorage.removeItem('token');
           }
+        } catch (e) {
+          console.error(e);
         }
-      } else {
-        setIsAdmin(false);
       }
       setLoading(false);
-    });
-
-    return unsubscribe;
+    };
+    checkAuth();
   }, []);
 
-  const signInWithGoogle = async () => {
-    const provider = new GoogleAuthProvider();
+  const login = async (email: string, password: string) => {
     try {
-      await signInWithPopup(auth, provider);
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      if (!res.ok) throw new Error('Login failed');
+      const data = await res.json();
+      localStorage.setItem('token', data.token);
+      setUser({ email: data.email });
+      setIsAdmin(true);
     } catch (error) {
-      console.error('Error signing in with Google', error);
+      console.error('Error signing in', error);
       throw error;
     }
   };
 
   const logout = async () => {
-    try {
-      await signOut(auth);
-    } catch (error) {
-      console.error('Error signing out', error);
-      throw error;
-    }
+    localStorage.removeItem('token');
+    setUser(null);
+    setIsAdmin(false);
   };
 
   return (
-    <AuthContext.Provider value={{ user, isAdmin, loading, signInWithGoogle, logout }}>
+    <AuthContext.Provider value={{ user, isAdmin, loading, login, logout }}>
       {!loading && children}
     </AuthContext.Provider>
   );

@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, onSnapshot, query, deleteDoc, doc, addDoc } from 'firebase/firestore';
-import { db } from '../../lib/firebase';
+import { api } from '../../lib/api';
 import { Plus, Trash2, Loader2, Shield } from 'lucide-react';
 
 export default function AdminUsersManager() {
@@ -10,23 +9,24 @@ export default function AdminUsersManager() {
   const [adding, setAdding] = useState(false);
 
   useEffect(() => {
-    const q = query(collection(db, 'admins'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const adminsData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      setAdmins(adminsData);
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
+    const fetchAdmins = async () => {
+      try {
+        const data = await api.get('/admins');
+        setAdmins(data.filter((a: any) => a.email !== 'youroger1@gmail.com'));
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAdmins();
   }, []);
 
   const handleDelete = async (id: string) => {
     if (window.confirm('Are you sure you want to remove this admin?')) {
       try {
-        await deleteDoc(doc(db, 'admins', id));
+        await api.delete(`/admins/${id}`);
+        setAdmins(admins.filter(a => a.id !== id));
       } catch (error) {
         console.error('Error deleting admin: ', error);
         alert('Failed to remove admin.');
@@ -43,10 +43,9 @@ export default function AdminUsersManager() {
 
     setAdding(true);
     try {
-      await addDoc(collection(db, 'admins'), {
-        email: newEmail.trim().toLowerCase(),
-        createdAt: new Date().toISOString()
-      });
+      const email = newEmail.trim().toLowerCase();
+      const res = await api.post('/admins', { email, password: 'password123' }); // Default password
+      setAdmins([...admins, res]);
       setNewEmail('');
     } catch (error) {
       console.error('Error adding admin:', error);

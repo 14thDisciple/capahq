@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Shield, TrendingUp, Users, Leaf, Navigation, X, Globe } from 'lucide-react';
-import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { api } from '../lib/api';
 
 const iconMap: Record<string, any> = {
   'Shield': Shield,
@@ -19,17 +18,19 @@ export default function FocusAreas() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const q = query(collection(db, 'thematicAreas'), orderBy('order', 'asc'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const areasData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      setAreas(areasData);
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
+    const fetchAreas = async () => {
+      try {
+        const data = await api.get('/thematic_areas');
+        // Sort by orderIndex
+        const sorted = data.sort((a: any, b: any) => (a.orderIndex || 0) - (b.orderIndex || 0));
+        setAreas(sorted);
+      } catch (error) {
+        console.error("Error fetching thematic areas:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAreas();
   }, []);
 
   if (loading) return null;

@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, onSnapshot, query, orderBy, deleteDoc, doc, addDoc, setDoc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { db, storage } from '../../lib/firebase';
+import { api } from '../../lib/api';
 import { Plus, Edit, Trash2, Loader2, Save, X, Image as ImageIcon, Link as LinkIcon } from 'lucide-react';
 
 export default function PartnersManager() {
@@ -12,23 +10,24 @@ export default function PartnersManager() {
   const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
-    const q = query(collection(db, 'partners'), orderBy('createdAt', 'desc'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const partnersData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      setPartners(partnersData);
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, []);
+    const fetchPartners = async () => {
+      try {
+        const data = await api.get('/partners');
+        setPartners(data);
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchPartners();
+  }, [isEditing]);
 
   const handleDelete = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this partner?')) {
       try {
-        await deleteDoc(doc(db, 'partners', id));
+        await api.delete(`/partners/${id}`);
+        setPartners(partners.filter(p => p.id !== id));
       } catch (error) {
         console.error('Error deleting partner: ', error);
         alert('Failed to delete partner.');
@@ -55,17 +54,14 @@ export default function PartnersManager() {
     e.preventDefault();
     setUploading(true);
     try {
+      const payload = {
+        ...currentPartner,
+        updatedAt: new Date().toISOString()
+      };
       if (currentPartner.id) {
-        await setDoc(doc(db, 'partners', currentPartner.id), {
-          ...currentPartner,
-          updatedAt: new Date().toISOString()
-        }, { merge: true });
+        await api.put(`/partners/${currentPartner.id}`, payload);
       } else {
-        await addDoc(collection(db, 'partners'), {
-          ...currentPartner,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        });
+        await api.post('/partners', payload);
       }
       setIsEditing(false);
       setCurrentPartner(null);
@@ -83,13 +79,10 @@ export default function PartnersManager() {
 
     setUploading(true);
     try {
-      const storageRef = ref(storage, `partners/${Date.now()}_${file.name}`);
-      await uploadBytes(storageRef, file);
-      const downloadURL = await getDownloadURL(storageRef);
-      
+      const res = await api.upload(file);
       setCurrentPartner((prev: any) => ({
         ...prev,
-        logoUrl: downloadURL
+        logoUrl: res.url
       }));
     } catch (error) {
       console.error("Error uploading image:", error);

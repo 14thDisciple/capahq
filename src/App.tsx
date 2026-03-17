@@ -12,6 +12,7 @@ import Partners from './components/Partners';
 import Footer from './components/Footer';
 import AdminDashboard from './components/admin/AdminDashboard';
 import ExternalPartners from './pages/ExternalPartners';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 function SimplePage({ title, content }: { title: string, content: string }) {
   useEffect(() => {
@@ -72,16 +73,18 @@ function HomePage() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <Router>
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/external-partners" element={<ExternalPartners />} />
-          <Route path="/privacy" element={<SimplePage title="Privacy Policy" content="We take your privacy seriously. This policy describes what personal information we collect and how we use it." />} />
-          <Route path="/terms" element={<SimplePage title="Terms of Service" content="By using our website, you agree to these terms of service. Please read them carefully." />} />
-          <Route path="/admin/*" element={<AdminDashboard />} />
-        </Routes>
-      </Router>
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <Router>
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/external-partners" element={<ExternalPartners />} />
+            <Route path="/privacy" element={<SimplePage title="Privacy Policy" content="We take your privacy seriously. This policy describes what personal information we collect and how we use it." />} />
+            <Route path="/terms" element={<SimplePage title="Terms of Service" content="By using our website, you agree to these terms of service. Please read them carefully." />} />
+            <Route path="/admin/*" element={<AdminDashboard />} />
+          </Routes>
+        </Router>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }

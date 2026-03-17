@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Routes, Route, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { LogOut, Plus, Edit, Trash2, LayoutDashboard, FileText, Image as ImageIcon, Users, Settings, Briefcase, Map, FileDown } from 'lucide-react';
-import { collection, getDocs, deleteDoc, doc, onSnapshot, query, orderBy } from 'firebase/firestore';
-import { db } from '../../lib/firebase';
+import { api } from '../../lib/api';
 import NewsEditor from './NewsEditor';
 import CarouselManager from './CarouselManager';
 import AdminUsersManager from './AdminUsersManager';
@@ -14,35 +13,56 @@ import ProvincesManager from './ProvincesManager';
 import ThematicAreasManager from './ThematicAreasManager';
 
 export default function AdminDashboard() {
-  const { user, isAdmin, signInWithGoogle, logout } = useAuth();
+  const { user, isAdmin, login, logout } = useAuth();
   const navigate = useNavigate();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    try {
+      await login(email, password);
+    } catch (err) {
+      setError('Invalid email or password');
+    }
+  };
 
   if (!user || !isAdmin) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full text-center">
           <h2 className="text-2xl font-bold text-slate-900 mb-6">Admin Login</h2>
-          {user && !isAdmin ? (
-            <div className="mb-6">
-              <p className="text-red-600 mb-4">You do not have permission to access the admin dashboard.</p>
-              <button
-                onClick={logout}
-                className="w-full flex items-center justify-center px-4 py-3 border border-transparent text-base font-medium rounded-xl text-white bg-slate-600 hover:bg-slate-700 transition-colors"
-              >
-                Sign Out
-              </button>
+          <form onSubmit={handleLogin} className="space-y-4 text-left">
+            {error && <p className="text-red-500 text-sm">{error}</p>}
+            <div>
+              <label className="block text-sm font-medium text-slate-700">Email</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                required
+              />
             </div>
-          ) : (
-            <>
-              <p className="text-slate-600 mb-8">Please sign in with your authorized Google account to access the admin dashboard.</p>
-              <button
-                onClick={signInWithGoogle}
-                className="w-full flex items-center justify-center px-4 py-3 border border-transparent text-base font-medium rounded-xl text-white bg-blue-600 hover:bg-blue-700 transition-colors"
-              >
-                Sign in with Google
-              </button>
-            </>
-          )}
+            <div>
+              <label className="block text-sm font-medium text-slate-700">Password</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                required
+              />
+            </div>
+            <button
+              type="submit"
+              className="w-full flex items-center justify-center px-4 py-3 border border-transparent text-base font-medium rounded-xl text-white bg-blue-600 hover:bg-blue-700 transition-colors"
+            >
+              Sign in
+            </button>
+          </form>
         </div>
       </div>
     );
@@ -95,9 +115,11 @@ export default function AdminDashboard() {
         </nav>
         <div className="p-4 border-t border-slate-200">
           <div className="flex items-center mb-4 px-4">
-            <img src={user.photoURL || ''} alt="Profile" className="w-8 h-8 rounded-full mr-3" />
+            <div className="w-8 h-8 rounded-full mr-3 bg-blue-100 flex items-center justify-center text-blue-600 font-bold">
+              {user.email.charAt(0).toUpperCase()}
+            </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-slate-900 truncate">{user.displayName}</p>
+              <p className="text-sm font-medium text-slate-900 truncate">Admin User</p>
               <p className="text-xs text-slate-500 truncate">{user.email}</p>
             </div>
           </div>
@@ -150,23 +172,24 @@ function NewsList() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const q = query(collection(db, 'news'), orderBy('createdAt', 'desc'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const newsData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      setNews(newsData);
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
+    const fetchNews = async () => {
+      try {
+        const data = await api.get('/news');
+        setNews(data);
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchNews();
   }, []);
 
   const handleDelete = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this article?')) {
       try {
-        await deleteDoc(doc(db, 'news', id));
+        await api.delete(`/news/${id}`);
+        setNews(news.filter(n => n.id !== id));
       } catch (error) {
         console.error('Error deleting document: ', error);
         alert('Failed to delete article.');

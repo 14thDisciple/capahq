@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { doc, getDoc, setDoc, addDoc, collection } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { db, storage } from '../../lib/firebase';
+import { api } from '../../lib/api';
 import { ArrowLeft, Save, Loader2, Image as ImageIcon } from 'lucide-react';
 
 export default function NewsEditor() {
@@ -24,16 +22,18 @@ export default function NewsEditor() {
     if (id) {
       const fetchArticle = async () => {
         try {
-          const docRef = doc(db, 'news', id);
-          const docSnap = await getDoc(docRef);
-          if (docSnap.exists()) {
-            setFormData(docSnap.data() as any);
-          } else {
-            alert('Article not found');
-            navigate('/admin/news');
-          }
+          const data = await api.get(`/news/${id}`);
+          setFormData({
+            title: data.title || '',
+            date: data.date || '',
+            category: data.category || '',
+            image: data.imageUrl || data.image || '',
+            content: data.content || ''
+          });
         } catch (error) {
           console.error('Error fetching article:', error);
+          alert('Article not found');
+          navigate('/admin/news');
         } finally {
           setLoading(false);
         }
@@ -53,13 +53,10 @@ export default function NewsEditor() {
 
     setUploading(true);
     try {
-      const storageRef = ref(storage, `news/${Date.now()}_${file.name}`);
-      await uploadBytes(storageRef, file);
-      const downloadURL = await getDownloadURL(storageRef);
-      
+      const res = await api.upload(file);
       setFormData((prev) => ({
         ...prev,
-        image: downloadURL
+        image: res.url
       }));
     } catch (error) {
       console.error("Error uploading image:", error);
@@ -73,17 +70,15 @@ export default function NewsEditor() {
     e.preventDefault();
     setSaving(true);
     try {
+      const payload = {
+        ...formData,
+        imageUrl: formData.image,
+        updatedAt: new Date().toISOString()
+      };
       if (id) {
-        await setDoc(doc(db, 'news', id), {
-          ...formData,
-          updatedAt: new Date().toISOString()
-        }, { merge: true });
+        await api.put(`/news/${id}`, payload);
       } else {
-        await addDoc(collection(db, 'news'), {
-          ...formData,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        });
+        await api.post('/news', payload);
       }
       navigate('/admin/news');
     } catch (error) {

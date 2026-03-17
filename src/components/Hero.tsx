@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
-import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
-import { db } from '../lib/firebase';
-import { seedDatabase } from '../lib/seedData';
+import { api } from '../lib/api';
 
 export default function Hero() {
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -11,22 +9,19 @@ export default function Hero() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    seedDatabase().catch(console.error);
-
-    const q = query(collection(db, 'hero_slides'), orderBy('order', 'asc'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const slidesData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      setSlides(slidesData);
-      setLoading(false);
-    }, (error) => {
-      console.error("Error fetching hero slides:", error);
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
+    const fetchSlides = async () => {
+      try {
+        const data = await api.get('/hero_slides');
+        // Sort by orderIndex
+        const sorted = data.sort((a: any, b: any) => (a.orderIndex || 0) - (b.orderIndex || 0));
+        setSlides(sorted);
+      } catch (error) {
+        console.error("Error fetching hero slides:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchSlides();
   }, []);
 
   useEffect(() => {

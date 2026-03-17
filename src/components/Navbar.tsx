@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Menu, X, ChevronDown, Globe, ExternalLink } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { doc, onSnapshot } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { api } from '../lib/api';
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -15,23 +14,24 @@ export default function Navbar() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const docRef = doc(db, 'settings', 'global');
-    const unsubscribe = onSnapshot(docRef, (docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        if (data.logoUrl) {
-          setLogoUrl(data.logoUrl);
-          setLogoError(false);
-        } else {
-          setLogoUrl('/capa-logo.png');
-          setLogoError(false);
+    const fetchSettings = async () => {
+      try {
+        const data = await api.get('/settings/global');
+        if (data && data.value) {
+          const parsed = JSON.parse(data.value);
+          if (parsed.logoUrl) {
+            setLogoUrl(parsed.logoUrl);
+            setLogoError(false);
+          } else {
+            setLogoUrl('/capa-logo.png');
+            setLogoError(false);
+          }
         }
+      } catch (error) {
+        console.error('Error fetching logo:', error);
       }
-    }, (error) => {
-      console.error('Error fetching logo:', error);
-    });
-
-    return () => unsubscribe();
+    };
+    fetchSettings();
   }, []);
 
   const navLinks = [

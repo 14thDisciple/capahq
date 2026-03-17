@@ -1,8 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { FileText, Download, BookOpen, ExternalLink, FileDown, Search, Filter, ArrowUpDown, Tag, Info, X, ChevronRight, ChevronLeft, LayoutGrid, Eye, Share2, ChevronDown, Sparkles, Loader2 } from 'lucide-react';
-import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { api } from '../lib/api';
 
 function FilterDropdown({ icon: Icon, value, options, onChange }: { icon: any, value: string, options: {value: string, label: string}[], onChange: (val: string) => void }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -80,18 +79,23 @@ export default function Resources() {
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
 
   useEffect(() => {
-    const q = query(collection(db, 'resources'), orderBy('createdAt', 'desc'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const resourcesData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        icon: FileText // Default icon, you can map based on type if needed
-      }));
-      setResources(resourcesData);
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
+    const fetchResources = async () => {
+      try {
+        const data = await api.get('/resources');
+        // Sort by createdAt desc
+        const sorted = data.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        const resourcesData = sorted.map((res: any) => ({
+          ...res,
+          icon: FileText
+        }));
+        setResources(resourcesData);
+      } catch (error) {
+        console.error("Error fetching resources:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchResources();
   }, []);
 
   const handleGenerateImage = async () => {

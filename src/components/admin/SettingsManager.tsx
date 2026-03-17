@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { db, storage } from '../../lib/firebase';
+import { api } from '../../lib/api';
 import { Save, Loader2, Image as ImageIcon } from 'lucide-react';
 
 export default function SettingsManager() {
@@ -13,10 +11,9 @@ export default function SettingsManager() {
   useEffect(() => {
     const fetchSettings = async () => {
       try {
-        const docRef = doc(db, 'settings', 'global');
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          setSettings(docSnap.data());
+        const data = await api.get('/settings/global');
+        if (data && data.value) {
+          setSettings(JSON.parse(data.value));
         }
       } catch (error) {
         console.error('Error fetching settings:', error);
@@ -31,10 +28,7 @@ export default function SettingsManager() {
     e.preventDefault();
     setSaving(true);
     try {
-      await setDoc(doc(db, 'settings', 'global'), {
-        ...settings,
-        updatedAt: new Date().toISOString()
-      }, { merge: true });
+      await api.put('/settings/global', { value: JSON.stringify(settings) });
       alert('Settings saved successfully!');
     } catch (error) {
       console.error('Error saving settings:', error);
@@ -50,13 +44,10 @@ export default function SettingsManager() {
 
     setUploading(true);
     try {
-      const storageRef = ref(storage, `settings/${Date.now()}_${file.name}`);
-      await uploadBytes(storageRef, file);
-      const downloadURL = await getDownloadURL(storageRef);
-      
+      const res = await api.upload(file);
       setSettings((prev: any) => ({
         ...prev,
-        logoUrl: downloadURL
+        logoUrl: res.url
       }));
     } catch (error) {
       console.error("Error uploading logo:", error);

@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, onSnapshot, query, orderBy, deleteDoc, doc, addDoc, setDoc } from 'firebase/firestore';
-import { db } from '../../lib/firebase';
+import { api } from '../../lib/api';
 import { Plus, Edit, Trash2, Loader2, Save, X, MapPin } from 'lucide-react';
 
 export default function ProvincesManager() {
@@ -11,23 +10,24 @@ export default function ProvincesManager() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    const q = query(collection(db, 'provinces'), orderBy('name', 'asc'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const provincesData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      setProvinces(provincesData);
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, []);
+    const fetchProvinces = async () => {
+      try {
+        const data = await api.get('/provinces');
+        setProvinces(data);
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProvinces();
+  }, [isEditing]);
 
   const handleDelete = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this province?')) {
       try {
-        await deleteDoc(doc(db, 'provinces', id));
+        await api.delete(`/provinces/${id}`);
+        setProvinces(provinces.filter(p => p.id !== id));
       } catch (error) {
         console.error('Error deleting province: ', error);
         alert('Failed to delete province.');
@@ -55,17 +55,14 @@ export default function ProvincesManager() {
     e.preventDefault();
     setSaving(true);
     try {
+      const payload = {
+        ...currentProvince,
+        updatedAt: new Date().toISOString()
+      };
       if (currentProvince.id) {
-        await setDoc(doc(db, 'provinces', currentProvince.id), {
-          ...currentProvince,
-          updatedAt: new Date().toISOString()
-        }, { merge: true });
+        await api.put(`/provinces/${currentProvince.id}`, payload);
       } else {
-        await addDoc(collection(db, 'provinces'), {
-          ...currentProvince,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        });
+        await api.post('/provinces', payload);
       }
       setIsEditing(false);
       setCurrentProvince(null);

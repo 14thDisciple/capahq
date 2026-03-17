@@ -2,31 +2,31 @@ import React, { useState, useEffect } from 'react';
 import { Globe, Mail, Phone, MapPin, Facebook, Twitter, Instagram, Send } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { doc, onSnapshot } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { api } from '../lib/api';
 
 export default function Footer() {
   const [logoError, setLogoError] = useState(false);
   const [logoUrl, setLogoUrl] = useState<string>('/capa-logo.png');
 
   useEffect(() => {
-    const docRef = doc(db, 'settings', 'global');
-    const unsubscribe = onSnapshot(docRef, (docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        if (data.logoUrl) {
-          setLogoUrl(data.logoUrl);
-          setLogoError(false);
-        } else {
-          setLogoUrl('/capa-logo.png');
-          setLogoError(false);
+    const fetchSettings = async () => {
+      try {
+        const data = await api.get('/settings/global');
+        if (data && data.value) {
+          const parsed = JSON.parse(data.value);
+          if (parsed.logoUrl) {
+            setLogoUrl(parsed.logoUrl);
+            setLogoError(false);
+          } else {
+            setLogoUrl('/capa-logo.png');
+            setLogoError(false);
+          }
         }
+      } catch (error) {
+        console.error('Error fetching logo:', error);
       }
-    }, (error) => {
-      console.error('Error fetching logo:', error);
-    });
-
-    return () => unsubscribe();
+    };
+    fetchSettings();
   }, []);
 
   return (

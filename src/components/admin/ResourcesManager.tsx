@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, onSnapshot, query, orderBy, deleteDoc, doc, addDoc, setDoc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { db, storage } from '../../lib/firebase';
+import { api } from '../../lib/api';
 import { Plus, Edit, Trash2, FileText, Loader2, Save, X, FileDown } from 'lucide-react';
 
 export default function ResourcesManager() {
@@ -12,23 +10,24 @@ export default function ResourcesManager() {
   const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
-    const q = query(collection(db, 'resources'), orderBy('createdAt', 'desc'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const resourcesData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      setResources(resourcesData);
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, []);
+    const fetchResources = async () => {
+      try {
+        const data = await api.get('/resources');
+        setResources(data);
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchResources();
+  }, [isEditing]);
 
   const handleDelete = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this resource?')) {
       try {
-        await deleteDoc(doc(db, 'resources', id));
+        await api.delete(`/resources/${id}`);
+        setResources(resources.filter(r => r.id !== id));
       } catch (error) {
         console.error('Error deleting resource: ', error);
         alert('Failed to delete resource.');
@@ -56,17 +55,14 @@ export default function ResourcesManager() {
     e.preventDefault();
     setUploading(true);
     try {
+      const payload = {
+        ...currentResource,
+        updatedAt: new Date().toISOString()
+      };
       if (currentResource.id) {
-        await setDoc(doc(db, 'resources', currentResource.id), {
-          ...currentResource,
-          updatedAt: new Date().toISOString()
-        }, { merge: true });
+        await api.put(`/resources/${currentResource.id}`, payload);
       } else {
-        await addDoc(collection(db, 'resources'), {
-          ...currentResource,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        });
+        await api.post('/resources', payload);
       }
       setIsEditing(false);
       setCurrentResource(null);
@@ -84,13 +80,10 @@ export default function ResourcesManager() {
 
     setUploading(true);
     try {
-      const storageRef = ref(storage, `resources/${Date.now()}_${file.name}`);
-      await uploadBytes(storageRef, file);
-      const downloadURL = await getDownloadURL(storageRef);
-      
+      const res = await api.upload(file);
       setCurrentResource((prev: any) => ({
         ...prev,
-        fileUrl: downloadURL,
+        fileUrl: res.url,
         fileName: file.name
       }));
     } catch (error) {

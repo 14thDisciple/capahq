@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, onSnapshot, query, orderBy, deleteDoc, doc, addDoc, setDoc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { db, storage } from '../../lib/firebase';
+import { api } from '../../lib/api';
 import { Plus, Edit, Trash2, Image as ImageIcon, Loader2, Save, X } from 'lucide-react';
 
 export default function CarouselManager() {
@@ -12,23 +10,24 @@ export default function CarouselManager() {
   const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
-    const q = query(collection(db, 'hero_slides'), orderBy('order', 'asc'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const slidesData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      setSlides(slidesData);
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, []);
+    const fetchSlides = async () => {
+      try {
+        const data = await api.get('/hero_slides');
+        setSlides(data);
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchSlides();
+  }, [isEditing]);
 
   const handleDelete = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this slide?')) {
       try {
-        await deleteDoc(doc(db, 'hero_slides', id));
+        await api.delete(`/hero_slides/${id}`);
+        setSlides(slides.filter(s => s.id !== id));
       } catch (error) {
         console.error('Error deleting slide: ', error);
         alert('Failed to delete slide.');
@@ -56,17 +55,16 @@ export default function CarouselManager() {
     e.preventDefault();
     setUploading(true);
     try {
+      const payload = {
+        ...currentSlide,
+        imageUrl: currentSlide.image || currentSlide.imageUrl,
+        orderIndex: currentSlide.order || currentSlide.orderIndex,
+        updatedAt: new Date().toISOString()
+      };
       if (currentSlide.id) {
-        await setDoc(doc(db, 'hero_slides', currentSlide.id), {
-          ...currentSlide,
-          updatedAt: new Date().toISOString()
-        }, { merge: true });
+        await api.put(`/hero_slides/${currentSlide.id}`, payload);
       } else {
-        await addDoc(collection(db, 'hero_slides'), {
-          ...currentSlide,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        });
+        await api.post('/hero_slides', payload);
       }
       setIsEditing(false);
       setCurrentSlide(null);
@@ -84,17 +82,15 @@ export default function CarouselManager() {
 
     setUploading(true);
     try {
-      const storageRef = ref(storage, `hero_slides/${Date.now()}_${file.name}`);
-      await uploadBytes(storageRef, file);
-      const downloadURL = await getDownloadURL(storageRef);
-      
+      const res = await api.upload(file);
       setCurrentSlide((prev: any) => ({
         ...prev,
-        image: downloadURL
+        image: res.url,
+        imageUrl: res.url
       }));
     } catch (error) {
       console.error("Error uploading image:", error);
-      alert("Failed to upload image. Please ensure your Firebase Storage rules allow uploads.");
+      alert("Failed to upload image.");
     } finally {
       setUploading(false);
     }

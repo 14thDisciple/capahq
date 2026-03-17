@@ -3,8 +3,7 @@ import { motion } from 'motion/react';
 import useEmblaCarousel from 'embla-carousel-react';
 import Autoplay from 'embla-carousel-autoplay';
 import { ExternalLink } from 'lucide-react';
-import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { api } from '../lib/api';
 
 export default function Partners() {
   const [partners, setPartners] = useState<any[]>([]);
@@ -16,17 +15,19 @@ export default function Partners() {
   );
 
   useEffect(() => {
-    const q = query(collection(db, 'partners'), orderBy('createdAt', 'desc'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const partnersData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      setPartners(partnersData);
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
+    const fetchPartners = async () => {
+      try {
+        const data = await api.get('/partners');
+        // Sort by createdAt desc
+        const sorted = data.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        setPartners(sorted);
+      } catch (error) {
+        console.error("Error fetching partners:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchPartners();
   }, []);
 
   if (loading) return null;

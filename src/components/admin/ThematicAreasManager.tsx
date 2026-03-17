@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, onSnapshot, query, orderBy, deleteDoc, doc, addDoc, setDoc } from 'firebase/firestore';
-import { db } from '../../lib/firebase';
+import { api } from '../../lib/api';
 import { Plus, Edit, Trash2, Loader2, Save, X, LayoutDashboard } from 'lucide-react';
 
 export default function ThematicAreasManager() {
@@ -11,23 +10,24 @@ export default function ThematicAreasManager() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    const q = query(collection(db, 'thematic_areas'), orderBy('order', 'asc'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const areasData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      setAreas(areasData);
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, []);
+    const fetchAreas = async () => {
+      try {
+        const data = await api.get('/thematic_areas');
+        setAreas(data);
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAreas();
+  }, [isEditing]);
 
   const handleDelete = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this thematic area?')) {
       try {
-        await deleteDoc(doc(db, 'thematic_areas', id));
+        await api.delete(`/thematic_areas/${id}`);
+        setAreas(areas.filter(a => a.id !== id));
       } catch (error) {
         console.error('Error deleting area: ', error);
         alert('Failed to delete area.');
@@ -54,17 +54,16 @@ export default function ThematicAreasManager() {
     e.preventDefault();
     setSaving(true);
     try {
+      const payload = {
+        ...currentArea,
+        icon: currentArea.iconName || currentArea.icon,
+        orderIndex: currentArea.order || currentArea.orderIndex,
+        updatedAt: new Date().toISOString()
+      };
       if (currentArea.id) {
-        await setDoc(doc(db, 'thematic_areas', currentArea.id), {
-          ...currentArea,
-          updatedAt: new Date().toISOString()
-        }, { merge: true });
+        await api.put(`/thematic_areas/${currentArea.id}`, payload);
       } else {
-        await addDoc(collection(db, 'thematic_areas'), {
-          ...currentArea,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        });
+        await api.post('/thematic_areas', payload);
       }
       setIsEditing(false);
       setCurrentArea(null);

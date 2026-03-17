@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ExternalLink, ArrowLeft, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { api } from '../lib/api';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 
@@ -11,27 +10,30 @@ export default function ExternalPartners() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const q = query(collection(db, 'partners'), orderBy('name', 'asc'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const uniquePartners: any[] = [];
-      const seenNames = new Set();
-      
-      snapshot.docs.forEach(doc => {
-        const data = doc.data();
-        if (!seenNames.has(data.name)) {
-          seenNames.add(data.name);
-          uniquePartners.push({
-            id: doc.id,
-            ...data
-          });
-        }
-      });
-      
-      setPartners(uniquePartners);
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
+    const fetchPartners = async () => {
+      try {
+        const data = await api.get('/partners');
+        // Sort by name asc
+        const sorted = data.sort((a: any, b: any) => a.name.localeCompare(b.name));
+        
+        const uniquePartners: any[] = [];
+        const seenNames = new Set();
+        
+        sorted.forEach((partner: any) => {
+          if (!seenNames.has(partner.name)) {
+            seenNames.add(partner.name);
+            uniquePartners.push(partner);
+          }
+        });
+        
+        setPartners(uniquePartners);
+      } catch (error) {
+        console.error("Error fetching partners:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchPartners();
   }, []);
 
   return (

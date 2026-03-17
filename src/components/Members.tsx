@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { MapPin, X } from 'lucide-react';
 import { ComposableMap, Geographies, Geography, Marker, ZoomableGroup } from 'react-simple-maps';
-import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { api } from '../lib/api';
 
 const geoUrl = "https://unpkg.com/world-atlas@2.0.2/countries-110m.json";
 
@@ -13,17 +12,19 @@ export default function Members() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const q = query(collection(db, 'provinces'), orderBy('name', 'asc'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const provincesData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      setProvinces(provincesData);
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
+    const fetchProvinces = async () => {
+      try {
+        const data = await api.get('/provinces');
+        // Sort by name asc
+        const sorted = data.sort((a: any, b: any) => a.name.localeCompare(b.name));
+        setProvinces(sorted);
+      } catch (error) {
+        console.error("Error fetching provinces:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProvinces();
   }, []);
 
   if (loading) return null;

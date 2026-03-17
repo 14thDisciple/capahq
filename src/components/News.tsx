@@ -3,9 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Calendar, ArrowRight, Sparkles, X, Loader2 } from 'lucide-react';
 import useEmblaCarousel from 'embla-carousel-react';
 import Autoplay from 'embla-carousel-autoplay';
-import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
-import { db } from '../lib/firebase';
-import { seedDatabase } from '../lib/seedData';
+import { api } from '../lib/api';
 
 export default function News() {
   const [selectedArticle, setSelectedArticle] = useState<any | null>(null);
@@ -13,23 +11,19 @@ export default function News() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Seed data if the collection is empty
-    seedDatabase().catch(console.error);
-
-    const q = query(collection(db, 'news'), orderBy('createdAt', 'desc'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const newsData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      setNews(newsData);
-      setLoading(false);
-    }, (error) => {
-      console.error("Error fetching news:", error);
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
+    const fetchNews = async () => {
+      try {
+        const data = await api.get('/news');
+        // Sort by createdAt desc
+        const sorted = data.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        setNews(sorted);
+      } catch (error) {
+        console.error("Error fetching news:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchNews();
   }, []);
 
   const [emblaRef] = useEmblaCarousel(
