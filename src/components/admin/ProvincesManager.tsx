@@ -29,8 +29,8 @@ export default function ProvincesManager() {
         await api.delete(`/provinces/${id}`);
         setProvinces(provinces.filter(p => p.id !== id));
       } catch (error) {
-        console.error('Error deleting province: ', error);
-        alert('Failed to delete province.');
+        console.error('Error deleting province:', error);
+        alert(error instanceof Error ? error.message : 'Failed to delete province.');
       }
     }
   };
@@ -66,9 +66,12 @@ export default function ProvincesManager() {
       }
       setIsEditing(false);
       setCurrentProvince(null);
+      // Refresh provinces
+      const data = await api.get('/provinces');
+      setProvinces(data);
     } catch (error) {
       console.error('Error saving province:', error);
-      alert('Failed to save province.');
+      alert(error instanceof Error ? error.message : 'Failed to save province.');
     } finally {
       setSaving(false);
     }

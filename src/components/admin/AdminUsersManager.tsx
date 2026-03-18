@@ -28,8 +28,8 @@ export default function AdminUsersManager() {
         await api.delete(`/admins/${id}`);
         setAdmins(admins.filter(a => a.id !== id));
       } catch (error) {
-        console.error('Error deleting admin: ', error);
-        alert('Failed to remove admin.');
+        console.error('Error deleting admin:', error);
+        alert(error instanceof Error ? error.message : 'Failed to remove admin.');
       }
     }
   };
@@ -49,7 +49,7 @@ export default function AdminUsersManager() {
       setNewEmail('');
     } catch (error) {
       console.error('Error adding admin:', error);
-      alert('Failed to add admin.');
+      alert(error instanceof Error ? error.message : 'Failed to add admin.');
     } finally {
       setAdding(false);
     }

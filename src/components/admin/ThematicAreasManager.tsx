@@ -29,8 +29,8 @@ export default function ThematicAreasManager() {
         await api.delete(`/thematic_areas/${id}`);
         setAreas(areas.filter(a => a.id !== id));
       } catch (error) {
-        console.error('Error deleting area: ', error);
-        alert('Failed to delete area.');
+        console.error('Error deleting area:', error);
+        alert(error instanceof Error ? error.message : 'Failed to delete area.');
       }
     }
   };
@@ -67,9 +67,12 @@ export default function ThematicAreasManager() {
       }
       setIsEditing(false);
       setCurrentArea(null);
+      // Refresh areas
+      const data = await api.get('/thematic_areas');
+      setAreas(data.sort((a: any, b: any) => (a.orderIndex || 0) - (b.orderIndex || 0)));
     } catch (error) {
       console.error('Error saving area:', error);
-      alert('Failed to save thematic area.');
+      alert(error instanceof Error ? error.message : 'Failed to save thematic area.');
     } finally {
       setSaving(false);
     }

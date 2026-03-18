@@ -15,6 +15,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+app.set('trust proxy', 1);
 const PORT = 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
@@ -102,11 +103,49 @@ db.exec(`
   );
 `);
 
+// Migrations to add missing columns
+const migrations = [
+  'ALTER TABLE provinces ADD COLUMN countries TEXT',
+  'ALTER TABLE provinces ADD COLUMN latitude REAL',
+  'ALTER TABLE provinces ADD COLUMN longitude REAL',
+  'ALTER TABLE provinces ADD COLUMN updatedAt TEXT',
+  'ALTER TABLE provinces ADD COLUMN createdAt INTEGER',
+  'ALTER TABLE partners ADD COLUMN updatedAt TEXT',
+  'ALTER TABLE hero_slides ADD COLUMN description TEXT',
+  'ALTER TABLE hero_slides ADD COLUMN badge TEXT',
+  'ALTER TABLE hero_slides ADD COLUMN image TEXT',
+  'ALTER TABLE hero_slides ADD COLUMN "order" INTEGER',
+  'ALTER TABLE hero_slides ADD COLUMN updatedAt TEXT',
+  'ALTER TABLE hero_slides ADD COLUMN createdAt INTEGER',
+  'ALTER TABLE news ADD COLUMN image TEXT',
+  'ALTER TABLE news ADD COLUMN updatedAt TEXT',
+  'ALTER TABLE resources ADD COLUMN fileName TEXT',
+  'ALTER TABLE resources ADD COLUMN updatedAt TEXT',
+  'ALTER TABLE thematic_areas ADD COLUMN iconName TEXT',
+  'ALTER TABLE thematic_areas ADD COLUMN "order" INTEGER',
+  'ALTER TABLE thematic_areas ADD COLUMN updatedAt TEXT',
+  'ALTER TABLE thematic_areas ADD COLUMN createdAt INTEGER'
+];
+
+for (const migration of migrations) {
+  try {
+    db.exec(migration);
+  } catch (e) {
+    // Ignore errors if column already exists
+  }
+}
+
 // Seed default admin if not exists
 const adminCheck = db.prepare('SELECT * FROM admins WHERE email = ?').get('youroger1@gmail.com');
 if (!adminCheck) {
   const hash = bcrypt.hashSync('admin123', 10);
   db.prepare('INSERT INTO admins (id, email, password, createdAt) VALUES (?, ?, ?, ?)').run('default-admin', 'youroger1@gmail.com', hash, Date.now());
+}
+
+// Seed global settings if not exists
+const settingsCheck = db.prepare('SELECT * FROM settings WHERE id = ?').get('global');
+if (!settingsCheck) {
+  db.prepare('INSERT INTO settings (id, value) VALUES (?, ?)').run('global', JSON.stringify({ logoUrl: '' }));
 }
 
 // Middleware
@@ -262,7 +301,7 @@ tables.forEach(table => {
     const placeholders = keys.map(() => '?').join(',');
     
     try {
-      db.prepare(`INSERT INTO ${table} (${keys.join(',')}) VALUES (${placeholders})`).run(values);
+      db.prepare(`INSERT INTO ${table} (${keys.map(k => `"${k}"`).join(',')}) VALUES (${placeholders})`).run(values);
       res.json({ id, ...req.body });
     } catch (e: any) {
       res.status(500).json({ error: e.message });
@@ -289,7 +328,7 @@ tables.forEach(table => {
       return res.json({ id: req.params.id });
     }
 
-    const setClause = keys.map(k => `${k} = ?`).join(',');
+    const setClause = keys.map(k => `"${k}" = ?`).join(',');
     
     try {
       // Check if record exists
@@ -301,7 +340,7 @@ tables.forEach(table => {
         const insertKeys = ['id', ...keys];
         const insertValues = [req.params.id, ...values];
         const placeholders = insertKeys.map(() => '?').join(',');
-        db.prepare(`INSERT INTO ${table} (${insertKeys.join(',')}) VALUES (${placeholders})`).run(insertValues);
+        db.prepare(`INSERT INTO ${table} (${insertKeys.map(k => `"${k}"`).join(',')}) VALUES (${placeholders})`).run(insertValues);
       }
       res.json({ id: req.params.id, ...req.body });
     } catch (e: any) {

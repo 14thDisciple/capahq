@@ -191,8 +191,8 @@ function NewsList() {
         await api.delete(`/news/${id}`);
         setNews(news.filter(n => n.id !== id));
       } catch (error) {
-        console.error('Error deleting document: ', error);
-        alert('Failed to delete article.');
+        console.error('Error deleting document:', error);
+        alert(error instanceof Error ? error.message : 'Failed to delete article.');
       }
     }
   };

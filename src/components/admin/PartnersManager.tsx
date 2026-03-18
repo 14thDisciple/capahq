@@ -30,7 +30,7 @@ export default function PartnersManager() {
         setPartners(partners.filter(p => p.id !== id));
       } catch (error) {
         console.error('Error deleting partner: ', error);
-        alert('Failed to delete partner.');
+        alert(error instanceof Error ? error.message : 'Failed to delete partner.');
       }
     }
   };
@@ -65,9 +65,12 @@ export default function PartnersManager() {
       }
       setIsEditing(false);
       setCurrentPartner(null);
+      // Refresh partners
+      const data = await api.get('/partners');
+      setPartners(data);
     } catch (error) {
       console.error('Error saving partner:', error);
-      alert('Failed to save partner.');
+      alert(error instanceof Error ? error.message : 'Failed to save partner.');
     } finally {
       setUploading(false);
     }
@@ -91,7 +94,7 @@ export default function PartnersManager() {
       }));
     } catch (error) {
       console.error("Error uploading image:", error);
-      alert("Failed to upload image.");
+      alert(error instanceof Error ? error.message : "Failed to upload image.");
     } finally {
       setUploading(false);
     }

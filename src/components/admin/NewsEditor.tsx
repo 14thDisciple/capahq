@@ -65,7 +65,7 @@ export default function NewsEditor() {
       }));
     } catch (error) {
       console.error("Error uploading image:", error);
-      alert("Failed to upload image.");
+      alert(error instanceof Error ? error.message : "Failed to upload image.");
     } finally {
       setUploading(false);
     }
@@ -88,7 +88,7 @@ export default function NewsEditor() {
       navigate('/admin/news');
     } catch (error) {
       console.error('Error saving article:', error);
-      alert('Failed to save article.');
+      alert(error instanceof Error ? error.message : 'Failed to save article.');
     } finally {
       setSaving(false);
     }

@@ -30,7 +30,7 @@ export default function CarouselManager() {
         setSlides(slides.filter(s => s.id !== id));
       } catch (error) {
         console.error('Error deleting slide: ', error);
-        alert('Failed to delete slide.');
+        alert(error instanceof Error ? error.message : 'Failed to delete slide.');
       }
     }
   };
@@ -70,7 +70,7 @@ export default function CarouselManager() {
       setCurrentSlide(null);
     } catch (error) {
       console.error('Error saving slide:', error);
-      alert('Failed to save slide.');
+      alert(error instanceof Error ? error.message : 'Failed to save slide.');
     } finally {
       setUploading(false);
     }
@@ -95,7 +95,7 @@ export default function CarouselManager() {
       }));
     } catch (error) {
       console.error("Error uploading image:", error);
-      alert("Failed to upload image.");
+      alert(error instanceof Error ? error.message : "Failed to upload image.");
     } finally {
       setUploading(false);
     }

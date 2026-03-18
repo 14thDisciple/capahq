@@ -29,8 +29,8 @@ export default function ResourcesManager() {
         await api.delete(`/resources/${id}`);
         setResources(resources.filter(r => r.id !== id));
       } catch (error) {
-        console.error('Error deleting resource: ', error);
-        alert('Failed to delete resource.');
+        console.error('Error deleting resource:', error);
+        alert(error instanceof Error ? error.message : 'Failed to delete resource.');
       }
     }
   };
@@ -66,9 +66,12 @@ export default function ResourcesManager() {
       }
       setIsEditing(false);
       setCurrentResource(null);
+      // Refresh resources
+      const data = await api.get('/resources');
+      setResources(data);
     } catch (error) {
       console.error('Error saving resource:', error);
-      alert('Failed to save resource.');
+      alert(error instanceof Error ? error.message : 'Failed to save resource.');
     } finally {
       setUploading(false);
     }
@@ -93,7 +96,7 @@ export default function ResourcesManager() {
       }));
     } catch (error) {
       console.error("Error uploading file:", error);
-      alert("Failed to upload file.");
+      alert(error instanceof Error ? error.message : "Failed to upload file.");
     } finally {
       setUploading(false);
     }
