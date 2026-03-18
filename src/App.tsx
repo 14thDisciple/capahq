@@ -14,6 +14,10 @@ import AdminDashboard from './components/admin/AdminDashboard';
 import ExternalPartners from './pages/ExternalPartners';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
+import AboutUs from './pages/AboutUs';
+import Leadership from './pages/Leadership';
+import Gallery from './pages/Gallery';
+
 function SimplePage({ title, content }: { title: string, content: string }) {
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -78,6 +82,11 @@ export default function App() {
         <Router>
           <Routes>
             <Route path="/" element={<HomePage />} />
+            <Route path="/about" element={<><Navbar /><AboutUs /><Footer /></>} />
+            <Route path="/leadership/primates" element={<><Navbar /><Leadership /><Footer /></>} />
+            <Route path="/leadership/standing-committee" element={<><Navbar /><Leadership /><Footer /></>} />
+            <Route path="/leadership/trustees" element={<><Navbar /><Leadership /><Footer /></>} />
+            <Route path="/gallery" element={<><Navbar /><Gallery /><Footer /></>} />
             <Route path="/external-partners" element={<ExternalPartners />} />
             <Route path="/privacy" element={<SimplePage title="Privacy Policy" content="We take your privacy seriously. This policy describes what personal information we collect and how we use it." />} />
             <Route path="/terms" element={<SimplePage title="Terms of Service" content="By using our website, you agree to these terms of service. Please read them carefully." />} />

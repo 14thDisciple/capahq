@@ -36,7 +36,16 @@ export default function Navbar() {
 
   const navLinks = [
     { name: 'Home', href: '/' },
-    { name: 'Who We Are', href: '/#about' },
+    { name: 'About Us', href: '/about' },
+    { 
+      name: 'Leadership', 
+      href: '#',
+      dropdown: [
+        { name: 'Primates', url: '/leadership/primates', isInternal: true },
+        { name: 'Standing Committee Members', url: '/leadership/standing-committee', isInternal: true },
+        { name: 'Trustees', url: '/leadership/trustees', isInternal: true }
+      ]
+    },
     { name: 'Our Work', href: '/#work' },
     { name: 'Members', href: '/#members' },
     { 
@@ -47,12 +56,17 @@ export default function Navbar() {
       ]
     },
     { name: 'Communications', href: '/#news' },
+    { name: 'Gallery', href: '/gallery' },
   ];
 
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    if (href === '#') {
+      e.preventDefault();
+      return;
+    }
     if (href.startsWith('/#')) {
       e.preventDefault();
-      if (location.pathname === '/' && location.hash === href.substring(1)) {
+      if (location.pathname === '/') {
         const id = href.substring(2);
         const element = document.getElementById(id);
         if (element) {
@@ -69,6 +83,8 @@ export default function Navbar() {
       } else {
         navigate('/');
       }
+      setIsOpen(false);
+    } else {
       setIsOpen(false);
     }
   };
@@ -123,9 +139,6 @@ export default function Navbar() {
                       transition={{ duration: 0.2 }}
                       className="absolute top-full left-0 w-64 bg-white rounded-xl shadow-xl border border-slate-100 py-2 overflow-hidden"
                     >
-                      <div className="px-4 py-2 border-b border-slate-50 mb-2">
-                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">External Partners</span>
-                      </div>
                       {link.dropdown.map((item, idx) => (
                         item.isInternal ? (
                           <Link
@@ -213,9 +226,6 @@ export default function Navbar() {
                         className="overflow-hidden bg-slate-50/80 rounded-xl mx-2"
                       >
                         <div className="py-2">
-                          <div className="px-4 py-2">
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">External Partners</span>
-                          </div>
                           {link.dropdown.map((item, idx) => (
                             item.isInternal ? (
                               <Link

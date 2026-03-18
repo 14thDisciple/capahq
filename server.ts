@@ -101,6 +101,37 @@ db.exec(`
     id TEXT PRIMARY KEY,
     value TEXT
   );
+  CREATE TABLE IF NOT EXISTS staff (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    email TEXT,
+    role TEXT,
+    bio TEXT,
+    image_url TEXT,
+    order_index INTEGER DEFAULT 0,
+    created_at TEXT,
+    updated_at TEXT
+  );
+  CREATE TABLE IF NOT EXISTS leadership (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    role TEXT,
+    category TEXT NOT NULL,
+    bio TEXT,
+    image_url TEXT,
+    order_index INTEGER DEFAULT 0,
+    created_at TEXT,
+    updated_at TEXT
+  );
+  CREATE TABLE IF NOT EXISTS gallery (
+    id TEXT PRIMARY KEY,
+    title TEXT,
+    image_url TEXT NOT NULL,
+    category TEXT,
+    date TEXT,
+    created_at TEXT,
+    updated_at TEXT
+  );
 `);
 
 // Migrations to add missing columns
@@ -235,13 +266,13 @@ app.post('/api/upload', authenticateToken, (req, res) => {
 });
 
 // Generic CRUD routes
-const tables = ['news', 'hero_slides', 'partners', 'provinces', 'resources', 'thematic_areas', 'admins', 'settings'];
+const tables = ['news', 'hero_slides', 'partners', 'provinces', 'resources', 'thematic_areas', 'admins', 'settings', 'staff', 'leadership', 'gallery'];
 
 tables.forEach(table => {
   // GET all
   app.get(`/api/${table}`, (req, res) => {
     let orderBy = 'createdAt DESC';
-    if (table === 'hero_slides' || table === 'thematic_areas') orderBy = 'orderIndex ASC';
+    if (table === 'hero_slides' || table === 'thematic_areas' || table === 'staff' || table === 'leadership') orderBy = 'orderIndex ASC';
     if (table === 'provinces') orderBy = 'name ASC';
     
     try {
@@ -250,10 +281,12 @@ tables.forEach(table => {
       const columnNames = columns.map(c => c.name);
       
       let actualOrderBy = 'id ASC';
-      if (orderBy === 'createdAt DESC' && columnNames.includes('createdAt')) {
-        actualOrderBy = 'createdAt DESC';
-      } else if (orderBy === 'orderIndex ASC' && columnNames.includes('orderIndex')) {
-        actualOrderBy = 'orderIndex ASC';
+      if (orderBy === 'createdAt DESC') {
+        if (columnNames.includes('createdAt')) actualOrderBy = 'createdAt DESC';
+        else if (columnNames.includes('created_at')) actualOrderBy = 'created_at DESC';
+      } else if (orderBy === 'orderIndex ASC') {
+        if (columnNames.includes('orderIndex')) actualOrderBy = 'orderIndex ASC';
+        else if (columnNames.includes('order_index')) actualOrderBy = 'order_index ASC';
       } else if (orderBy === 'name ASC' && columnNames.includes('name')) {
         actualOrderBy = 'name ASC';
       }
@@ -287,23 +320,34 @@ tables.forEach(table => {
   // POST
   app.post(`/api/${table}`, authenticateToken, (req, res) => {
     const id = Date.now().toString();
-    const data = { ...req.body, id, createdAt: Date.now() };
-    
-    if (table === 'admins' && data.password) {
-      data.password = bcrypt.hashSync(data.password, 10);
-    }
-
-    if (data.coordinates) data.coordinates = JSON.stringify(data.coordinates);
-    if (data.tags) data.tags = JSON.stringify(data.tags);
-
-    const keys = Object.keys(data);
-    const values = Object.values(data);
-    const placeholders = keys.map(() => '?').join(',');
+    const data = { ...req.body, id };
     
     try {
-      db.prepare(`INSERT INTO ${table} (${keys.map(k => `"${k}"`).join(',')}) VALUES (${placeholders})`).run(values);
+      const columns = db.prepare(`PRAGMA table_info(${table})`).all() as any[];
+      const columnNames = columns.map(c => c.name);
+      
+      if (columnNames.includes('createdAt')) {
+        data.createdAt = Date.now();
+      } else if (columnNames.includes('created_at')) {
+        data.created_at = new Date().toISOString();
+      }
+
+      if (table === 'admins' && data.password) {
+        data.password = bcrypt.hashSync(data.password, 10);
+      }
+
+      if (data.coordinates && typeof data.coordinates !== 'string') data.coordinates = JSON.stringify(data.coordinates);
+      if (data.tags && typeof data.tags !== 'string') data.tags = JSON.stringify(data.tags);
+
+      // Filter out keys that don't exist in the table schema
+      const validKeys = Object.keys(data).filter(k => columnNames.includes(k));
+      const validValues = validKeys.map(k => data[k]);
+      const placeholders = validKeys.map(() => '?').join(',');
+      
+      db.prepare(`INSERT INTO ${table} (${validKeys.map(k => `"${k}"`).join(',')}) VALUES (${placeholders})`).run(validValues);
       res.json({ id, ...req.body });
     } catch (e: any) {
+      console.error(`Error inserting into ${table}:`, e);
       res.status(500).json({ error: e.message });
     }
   });
@@ -312,38 +356,47 @@ tables.forEach(table => {
   app.put(`/api/${table}/:id`, authenticateToken, (req, res) => {
     const data = { ...req.body };
     
-    if (table === 'admins' && data.password) {
-      data.password = bcrypt.hashSync(data.password, 10);
-    }
-
-    if (data.coordinates) data.coordinates = JSON.stringify(data.coordinates);
-    if (data.tags) data.tags = JSON.stringify(data.tags);
-    
-    delete data.id; // Don't update ID
-    
-    const keys = Object.keys(data);
-    const values = Object.values(data);
-    
-    if (keys.length === 0) {
-      return res.json({ id: req.params.id });
-    }
-
-    const setClause = keys.map(k => `"${k}" = ?`).join(',');
-    
     try {
+      const columns = db.prepare(`PRAGMA table_info(${table})`).all() as any[];
+      const columnNames = columns.map(c => c.name);
+
+      if (table === 'admins' && data.password) {
+        data.password = bcrypt.hashSync(data.password, 10);
+      }
+
+      if (data.coordinates && typeof data.coordinates !== 'string') data.coordinates = JSON.stringify(data.coordinates);
+      if (data.tags && typeof data.tags !== 'string') data.tags = JSON.stringify(data.tags);
+
+      if (columnNames.includes('updatedAt')) {
+        data.updatedAt = Date.now();
+      } else if (columnNames.includes('updated_at')) {
+        data.updated_at = new Date().toISOString();
+      }
+
+      // Filter out keys that don't exist in the table schema
+      const validKeys = Object.keys(data).filter(k => columnNames.includes(k) && k !== 'id');
+      const validValues = validKeys.map(k => data[k]);
+      
+      if (validKeys.length === 0) {
+        return res.json({ id: req.params.id });
+      }
+
+      const setClause = validKeys.map(k => `"${k}" = ?`).join(',');
+      
       // Check if record exists
       const existing = db.prepare(`SELECT * FROM ${table} WHERE id = ?`).get(req.params.id);
       if (existing) {
-        db.prepare(`UPDATE ${table} SET ${setClause} WHERE id = ?`).run([...values, req.params.id]);
+        db.prepare(`UPDATE ${table} SET ${setClause} WHERE id = ?`).run([...validValues, req.params.id]);
       } else {
         // Insert if not exists (for settings/global)
-        const insertKeys = ['id', ...keys];
-        const insertValues = [req.params.id, ...values];
+        const insertKeys = ['id', ...validKeys];
+        const insertValues = [req.params.id, ...validValues];
         const placeholders = insertKeys.map(() => '?').join(',');
         db.prepare(`INSERT INTO ${table} (${insertKeys.map(k => `"${k}"`).join(',')}) VALUES (${placeholders})`).run(insertValues);
       }
       res.json({ id: req.params.id, ...req.body });
     } catch (e: any) {
+      console.error(`Error updating ${table}:`, e);
       res.status(500).json({ error: e.message });
     }
   });

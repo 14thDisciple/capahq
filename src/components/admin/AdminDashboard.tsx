@@ -11,6 +11,9 @@ import ResourcesManager from './ResourcesManager';
 import PartnersManager from './PartnersManager';
 import ProvincesManager from './ProvincesManager';
 import ThematicAreasManager from './ThematicAreasManager';
+import StaffManager from './StaffManager';
+import LeadershipManager from './LeadershipManager';
+import GalleryManager from './GalleryManager';
 
 export default function AdminDashboard() {
   const { user, isAdmin, login, logout } = useAuth();
@@ -108,6 +111,18 @@ export default function AdminDashboard() {
             <LayoutDashboard className="w-5 h-5 mr-3" />
             Thematic Areas
           </Link>
+          <Link to="/admin/staff" className="flex items-center px-4 py-3 text-slate-700 hover:bg-slate-50 rounded-xl transition-colors">
+            <Users className="w-5 h-5 mr-3" />
+            Manage Staff
+          </Link>
+          <Link to="/admin/leadership" className="flex items-center px-4 py-3 text-slate-700 hover:bg-slate-50 rounded-xl transition-colors">
+            <Users className="w-5 h-5 mr-3" />
+            Manage Leadership
+          </Link>
+          <Link to="/admin/gallery" className="flex items-center px-4 py-3 text-slate-700 hover:bg-slate-50 rounded-xl transition-colors">
+            <ImageIcon className="w-5 h-5 mr-3" />
+            Manage Gallery
+          </Link>
           <Link to="/admin/users" className="flex items-center px-4 py-3 text-slate-700 hover:bg-slate-50 rounded-xl transition-colors">
             <Users className="w-5 h-5 mr-3" />
             Admin Users
@@ -150,6 +165,9 @@ export default function AdminDashboard() {
             <Route path="/partners" element={<PartnersManager />} />
             <Route path="/provinces" element={<ProvincesManager />} />
             <Route path="/thematic-areas" element={<ThematicAreasManager />} />
+            <Route path="/staff" element={<StaffManager />} />
+            <Route path="/leadership" element={<LeadershipManager />} />
+            <Route path="/gallery" element={<GalleryManager />} />
             <Route path="/users" element={<AdminUsersManager />} />
           </Routes>
         </div>
