@@ -78,6 +78,11 @@ export default function ResourcesManager() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (file.size > 5 * 1024 * 1024) {
+      alert("File exceeds the 5MB size limit.");
+      return;
+    }
+
     setUploading(true);
     try {
       const res = await api.upload(file);
@@ -154,7 +159,7 @@ export default function ResourcesManager() {
                   onChange={handleFileUpload}
                   className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                 />
-                <p className="mt-2 text-xs text-slate-500">Upload PDF, Word, Excel, or PowerPoint files.</p>
+                <p className="mt-2 text-xs text-slate-500">Upload PDF, Word, Excel, or PowerPoint files (Max 5MB).</p>
                 
                 {currentResource.fileUrl && (
                   <div className="mt-4 p-3 bg-slate-50 border border-slate-200 rounded-lg flex items-center">
@@ -162,17 +167,6 @@ export default function ResourcesManager() {
                     <span className="text-sm font-medium text-slate-700 truncate">{currentResource.fileName || 'Uploaded File'}</span>
                   </div>
                 )}
-
-                <div className="mt-4">
-                  <label className="block text-xs font-medium text-slate-700 mb-1">Or provide a direct file URL</label>
-                  <input
-                    type="url"
-                    value={currentResource.fileUrl}
-                    onChange={(e) => setCurrentResource({...currentResource, fileUrl: e.target.value})}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                    placeholder="https://example.com/document.pdf"
-                  />
-                </div>
               </div>
             </div>
           </div>

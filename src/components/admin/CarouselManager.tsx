@@ -80,6 +80,11 @@ export default function CarouselManager() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (file.size > 5 * 1024 * 1024) {
+      alert("Image exceeds the 5MB size limit.");
+      return;
+    }
+
     setUploading(true);
     try {
       const res = await api.upload(file);
@@ -128,17 +133,7 @@ export default function CarouselManager() {
                   onChange={handleImageUpload}
                   className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                 />
-                <p className="mt-2 text-xs text-slate-500">Upload a high-resolution image (1920x1080 recommended).</p>
-                <div className="mt-4">
-                  <label className="block text-xs font-medium text-slate-700 mb-1">Or provide an image URL</label>
-                  <input
-                    type="url"
-                    value={currentSlide.image}
-                    onChange={(e) => setCurrentSlide({...currentSlide, image: e.target.value})}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                    placeholder="https://example.com/image.jpg"
-                  />
-                </div>
+                <p className="mt-2 text-xs text-slate-500">Upload a high-resolution image (1920x1080 recommended, Max 5MB).</p>
               </div>
             </div>
           </div>
